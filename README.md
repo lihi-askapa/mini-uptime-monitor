@@ -1,0 +1,61 @@
+# Pulse — Mini Uptime Monitor
+
+A small DevOps learning project by **Lihi Askapa**: build it, explain it, break it, investigate it.
+
+## Stage 1: local application
+
+- Python + Flask, server-rendered HTML/CSS, SQLite.
+- Check configured websites on demand; record HTTP status, duration and UTC timestamp.
+- Display the latest result per target and the last 50 historical checks.
+- `GET /health` checks this application and database readability, independently of target status.
+- HTTP 200–399 is classified as up; other codes and connection failures as down. Redirects are followed by Python's HTTP client.
+- Duration measures time to receive response headers, not complete page load.
+
+## Run
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python app.py
+```
+
+Open http://127.0.0.1:8080 and click **Check now**. Stop with Ctrl+C.
+
+```bash
+python -m unittest discover -s tests -v
+curl http://127.0.0.1:8080/health
+```
+
+## Configuration
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `PORT` | `8080` | Application listener |
+| `HOST` | `127.0.0.1` | Local interface; later use `0.0.0.0` inside Docker |
+| `DATABASE_PATH` | `data/checks.db` beside app.py | Persistent SQLite file |
+| `REQUEST_TIMEOUT` | `5` | HTTP socket timeout in seconds, not a strict total request deadline |
+| `MONITOR_TARGETS` | Example + portfolio | JSON mapping of target IDs to name/URL |
+
+Example: `PORT=8081 python app.py`. `.env.example` is a reference; no automatic dotenv loader is used.
+
+## Request path
+
+Browser → Flask → configured website → SQLite → rendered result.
+
+`POST /checks` accepts a configured target ID, not an arbitrary URL. Only configure endpoints you are permitted to check. Each click performs one synchronous request; there is no scheduler, uptime percentage or alert delivery yet. The latest result is a historical observation, not a guarantee of present availability.
+
+## Deployment boundary
+
+This first version is a localhost learning application. It uses Flask's development server and has no authentication, CSRF protection or rate limiting. Public deployment will need those decisions plus production serving, restricted egress (including redirect targets), resource limits and request concurrency controls. Do not expose the current development server publicly.
+
+## Learning roadmap
+
+- [x] Local application, SQLite history, health endpoint, logs and tests
+- [ ] Docker image, environment variables and persistent volume
+- [ ] Failure investigation exercises
+- [ ] GitHub Actions tests and image build
+- [ ] AWS training deployment and Terraform module
+- [ ] AI-assisted review workflow with human approval
+
+See [learning notes](docs/learning-notes.md). Only completed stages should be described as hands-on experience in an interview.
