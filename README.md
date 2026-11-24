@@ -35,7 +35,7 @@ curl http://127.0.0.1:8080/health
 | `HOST` | `127.0.0.1` | Local interface; later use `0.0.0.0` inside Docker |
 | `DATABASE_PATH` | `data/checks.db` beside app.py | Persistent SQLite file |
 | `REQUEST_TIMEOUT` | `5` | HTTP socket timeout in seconds, not a strict total request deadline |
-| `MONITOR_TARGETS` | Example + portfolio | JSON mapping of target IDs to name/URL |
+| `MONITOR_TARGETS` | Example + portfolio + Ogdan Mehandesim | JSON mapping of target IDs to name/URL |
 
 Example: `PORT=8081 python app.py`. `.env.example` is a reference; no automatic dotenv loader is used.
 

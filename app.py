@@ -21,6 +21,7 @@ def create_app(test_config=None):
         TARGETS=json.loads(os.environ.get("MONITOR_TARGETS", json.dumps({
             "example": {"name": "Example website", "url": "https://example.com"},
             "portfolio": {"name": "Lihi's portfolio", "url": "https://lihi-portfolio-site.onrender.com/"},
+            "ogdan": {"name": "Ogdan Mehandesim", "url": "https://ogdan-mehandesim.onrender.com/"},
         }))),
         REQUEST_TIMEOUT=float(os.environ.get("REQUEST_TIMEOUT", "5")),
     )
