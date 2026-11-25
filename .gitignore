@@ -11,3 +11,5 @@ data/
 .terraform/
 *.tfstate*
 *.tfvars
+wheelhouse/*
+!wheelhouse/.gitkeep

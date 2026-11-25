@@ -27,6 +27,15 @@ python -m unittest discover -s tests -v
 curl http://127.0.0.1:8080/health
 ```
 
+## Stage 2: Docker
+
+```bash
+docker compose up -d --build --wait
+docker compose ps
+```
+
+Open http://127.0.0.1:8081. Docker runs Gunicorn as a non-root user and stores SQLite in a named volume. This history is separate from the local Python history. See the [Docker lab in Hebrew](docs/docker-lab.md) for ports, logs, persistence and troubleshooting.
+
 ## Configuration
 
 | Variable | Default | Purpose |
@@ -47,12 +56,12 @@ Browser → Flask → configured website → SQLite → rendered result.
 
 ## Deployment boundary
 
-This first version is a localhost learning application. It uses Flask's development server and has no authentication, CSRF protection or rate limiting. Public deployment will need those decisions plus production serving, restricted egress (including redirect targets), resource limits and request concurrency controls. Do not expose the current development server publicly.
+This is a localhost learning application with no authentication, CSRF protection or rate limiting. Direct `python app.py` uses Flask's development server; Docker uses Gunicorn with local-only port publishing and resource limits. Public deployment still needs authentication/CSRF decisions, rate limiting, restricted egress (including redirect targets) and concurrency/load validation. Do not expose the development server publicly.
 
 ## Learning roadmap
 
 - [x] Local application, SQLite history, health endpoint, logs and tests
-- [ ] Docker image, environment variables and persistent volume
+- [x] Docker image, environment variables and persistent volume
 - [ ] Failure investigation exercises
 - [ ] GitHub Actions tests and image build
 - [ ] AWS training deployment and Terraform module

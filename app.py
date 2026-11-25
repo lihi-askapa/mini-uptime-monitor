@@ -16,6 +16,7 @@ from flask import Flask, abort, jsonify, redirect, render_template, request, url
 
 def create_app(test_config=None):
     app = Flask(__name__)
+    app.logger.setLevel(logging.INFO)
     app.config.from_mapping(
         DATABASE=os.environ.get("DATABASE_PATH", str(Path(__file__).parent / "data/checks.db")),
         TARGETS=json.loads(os.environ.get("MONITOR_TARGETS", json.dumps({
