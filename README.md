@@ -45,8 +45,9 @@ the same five unittest tests used locally. The tests use mocked HTTP responses a
 temporary databases; they do not check the live websites or use the application volume.
 
 The workflow starts running after the file is committed and pushed to GitHub.
-It currently tests Python code directly, without building or publishing a Docker
-image or deploying the application. See [the CI lab in Hebrew](docs/ci-lab.md).
+After the Python tests pass, it builds `mini-uptime-monitor:ci` and runs the same
+tests inside a temporary container from that image. No image is published and
+the application is not deployed. See [the CI lab in Hebrew](docs/ci-lab.md).
 
 ## Configuration
 
@@ -75,7 +76,8 @@ This is a localhost learning application with no authentication, CSRF protection
 - [x] Local application, SQLite history, health endpoint, logs and tests
 - [x] Docker image, environment variables and persistent volume
 - [ ] Failure investigation exercises
-- [ ] GitHub Actions tests and image build
+- [x] GitHub Actions Python tests
+- [ ] GitHub Actions image build and container tests (workflow prepared; remote run pending)
 - [ ] AWS training deployment and Terraform module
 - [ ] AI-assisted review workflow with human approval
 

@@ -1,4 +1,4 @@
-name: Python tests
+name: Python tests and Docker build
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
 jobs:
   tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - name: Download repository code
         uses: actions/checkout@v6
@@ -26,3 +26,9 @@ jobs:
 
       - name: Run the five application tests
         run: python -m unittest discover -s tests -v
+
+      - name: Build Docker image
+        run: docker build --tag mini-uptime-monitor:ci .
+
+      - name: Run tests inside the Docker image
+        run: docker run --rm mini-uptime-monitor:ci python -m unittest discover -s tests -v
