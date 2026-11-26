@@ -41,13 +41,36 @@ Open http://127.0.0.1:8081. Docker runs Gunicorn as a non-root user and stores S
 The workflow in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on pushes,
 pull requests and manual requests from the GitHub Actions tab. An Ubuntu runner
 downloads the repository, sets up Python 3.12, installs `requirements.txt` and runs
-the same five unittest tests used locally. The tests use mocked HTTP responses and
+the same unittest tests used locally. The tests use mocked HTTP responses and
 temporary databases; they do not check the live websites or use the application volume.
 
 The workflow starts running after the file is committed and pushed to GitHub.
 After the Python tests pass, it builds `mini-uptime-monitor:ci` and runs the same
 tests inside a temporary container from that image. No image is published and
 the application is not deployed. See [the CI lab in Hebrew](docs/ci-lab.md).
+
+## Optional scheduled monitoring
+
+The `monitor` CLI command reuses the web button's check-and-save function. The
+optional Compose service `scheduler` runs it in a separate container with the same
+image and SQLite volume. It checks all configured targets sequentially, waits 60
+seconds after the round finishes, then repeats. The first round starts immediately.
+This is not an exact once-per-minute schedule. Refresh the browser to see new rows.
+
+After rebuilding the image (see the Docker lab for the local offline build):
+
+```bash
+docker compose --profile monitoring up -d
+docker compose logs --tail=20 scheduler
+docker compose stop scheduler
+```
+
+The last command stops background checks while leaving `web` running. The scheduler
+has no HTTP listener or health check. Run one instance; there is no leader election,
+automatic restart or alerting. Configure targets consistently in both services if
+overriding defaults. A database failure stops the worker and is visible in its logs.
+Stopping Docker stops monitoring. History has no retention limit yet; stop the
+worker after the exercise.
 
 ## Configuration
 
@@ -65,7 +88,7 @@ Example: `PORT=8081 python app.py`. `.env.example` is a reference; no automatic 
 
 Browser → Flask → configured website → SQLite → rendered result.
 
-`POST /checks` accepts a configured target ID, not an arbitrary URL. Only configure endpoints you are permitted to check. Each click performs one synchronous request; there is no scheduler, uptime percentage or alert delivery yet. The latest result is a historical observation, not a guarantee of present availability.
+`POST /checks` accepts a configured target ID, not an arbitrary URL. Only configure endpoints you are permitted to check. Each click performs one synchronous request; optional background checks use the scheduler described above. There is no uptime percentage or alert delivery yet. The latest result is a historical observation, not a guarantee of present availability.
 
 ## Deployment boundary
 
@@ -75,9 +98,10 @@ This is a localhost learning application with no authentication, CSRF protection
 
 - [x] Local application, SQLite history, health endpoint, logs and tests
 - [x] Docker image, environment variables and persistent volume
-- [ ] Failure investigation exercises
+- [x] Intentional CI failure, log investigation and repair
 - [x] GitHub Actions Python tests
-- [ ] GitHub Actions image build and container tests (workflow prepared; remote run pending)
+- [x] GitHub Actions image build and container tests (green run confirmed by the user)
+- [x] Scheduled checks (seven unit tests passed; repeated container rounds confirmed in logs)
 - [ ] AWS training deployment and Terraform module
 - [ ] AI-assisted review workflow with human approval
 

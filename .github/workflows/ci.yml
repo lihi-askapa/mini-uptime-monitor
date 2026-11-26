@@ -24,7 +24,7 @@ jobs:
       - name: Install application dependencies
         run: python -m pip install -r requirements.txt
 
-      - name: Run the five application tests
+      - name: Run application tests
         run: python -m unittest discover -s tests -v
 
       - name: Build Docker image

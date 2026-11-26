@@ -24,5 +24,32 @@ services:
         max-size: "5m"
         max-file: "2"
 
+  scheduler:
+    image: mini-uptime-monitor:local
+    profiles: [monitoring]
+    command: ["flask", "--app", "app:create_app()", "monitor", "--interval", "60"]
+    environment:
+      DATABASE_PATH: /app/data/checks.db
+      REQUEST_TIMEOUT: "5"
+    volumes:
+      - monitor-data:/app/data
+    depends_on:
+      web:
+        condition: service_healthy
+    healthcheck:
+      disable: true
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 256m
+    cpus: 1.0
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+
 volumes:
   monitor-data:

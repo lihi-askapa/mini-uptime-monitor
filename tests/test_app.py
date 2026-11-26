@@ -53,6 +53,25 @@ class MonitorTests(unittest.TestCase):
         Path(self.path).unlink()
         self.assertEqual(self.client.get("/health").status_code, 503)
 
+    def test_monitor_once_records_every_configured_target(self):
+        self.client.application.config["TARGETS"]["second"] = {
+            "name": "Second", "url": "https://example.org"}
+        response = MagicMock()
+        response.__enter__.return_value.status = 200
+        with patch("app.urlopen", return_value=response) as call:
+            result = self.client.application.test_cli_runner().invoke(args=["monitor", "--once"])
+        self.assertEqual(result.exit_code, 0, result.output)
+        self.assertEqual(call.call_count, 2)
+        with sqlite3.connect(self.path) as db:
+            rows = db.execute("SELECT target_id,status FROM checks ORDER BY id").fetchall()
+        self.assertEqual(rows, [("demo", "up"), ("second", "up")])
+
+    def test_monitor_rejects_interval_below_ten_seconds(self):
+        with patch("app.urlopen") as call:
+            result = self.client.application.test_cli_runner().invoke(args=["monitor", "--interval", "0"])
+        self.assertEqual(result.exit_code, 2)
+        call.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

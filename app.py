@@ -11,6 +11,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
+import click
 from flask import Flask, abort, jsonify, redirect, render_template, request, url_for
 
 
@@ -64,11 +65,7 @@ def create_app(test_config=None):
         return render_template("index.html", targets=app.config["TARGETS"],
                                latest=latest, history=history, counts=counts)
 
-    @app.post("/checks")
-    def run_check():
-        target_id = request.form.get("target_id", "")
-        if target_id not in app.config["TARGETS"]:
-            abort(400, "Choose a configured target")
+    def check_target(target_id):
         target = app.config["TARGETS"][target_id]
         started = time.monotonic()
         code, error = None, None
@@ -90,7 +87,29 @@ def create_app(test_config=None):
                 datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
                 state, code, elapsed, error))
         app.logger.info("check target=%s status=%s http=%s duration_ms=%s", target_id, state, code, elapsed)
+
+    @app.post("/checks")
+    def run_check():
+        target_id = request.form.get("target_id", "")
+        if target_id not in app.config["TARGETS"]:
+            abort(400, "Choose a configured target")
+        check_target(target_id)
         return redirect(url_for("index"), code=303)
+
+    @app.cli.command("monitor")
+    @click.option("--interval", default=60, type=click.IntRange(min=10), show_default=True,
+                  help="Seconds to wait after each complete round.")
+    @click.option("--once", is_flag=True, help="Run one round and exit.")
+    def monitor(interval, once):
+        """Check all configured targets sequentially, then wait and repeat."""
+        while True:
+            app.logger.info("Scheduled check round started")
+            for target_id in app.config["TARGETS"]:
+                check_target(target_id)
+            if once:
+                return
+            app.logger.info("Scheduled round finished; waiting %s seconds", interval)
+            time.sleep(interval)
 
     @app.get("/health")
     def health():
