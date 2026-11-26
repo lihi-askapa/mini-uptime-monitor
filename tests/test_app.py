@@ -51,7 +51,8 @@ class MonitorTests(unittest.TestCase):
 
     def test_health_reports_database_failure(self):
         Path(self.path).unlink()
-        self.assertEqual(self.client.get("/health").status_code, 503)
+        # CI learning exercise: deliberately wrong; restore 503 after inspecting the failure.
+        self.assertEqual(self.client.get("/health").status_code, 200)
 
 
 if __name__ == "__main__":
