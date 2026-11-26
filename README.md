@@ -95,7 +95,15 @@ Browser → Flask → configured website → SQLite → rendered result.
 
 ## Deployment boundary
 
-This is a localhost learning application with no authentication, CSRF protection or rate limiting. Direct `python app.py` uses Flask's development server; Docker uses Gunicorn with local-only port publishing and resource limits. Public deployment still needs authentication/CSRF decisions, rate limiting, restricted egress (including redirect targets) and concurrency/load validation. Do not expose the development server publicly.
+The default configuration is a localhost learning application without authentication.
+Direct `python app.py` uses Flask's development server; Docker uses Gunicorn with
+local-only port publishing and resource limits. Do not expose the development server publicly.
+
+An optional public demo configuration is prepared in `compose.public.yaml` and
+`Caddyfile`, with HTTPS, session form tokens and a shared 30-second per-target manual
+check cooldown. Ten tests pass locally; the public deployment is not yet verified.
+See [the public demo guide in Hebrew](docs/public-demo.md). This is a small demo,
+without DDoS protection, automatic history retention or general-purpose URL input.
 
 ## Learning roadmap
 

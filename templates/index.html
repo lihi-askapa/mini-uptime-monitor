@@ -6,14 +6,14 @@
 <header><a class="brand" href="/">◉ PULSE <span>MINI UPTIME MONITOR</span></a><a class="health" href="/health">App health ↗</a></header>
 <section class="intro"><span class="eyebrow">OBSERVE. INVESTIGATE. LEARN.</span><h1>A little clarity<br>for your services.</h1><p>Check a website. Follow the response. Keep the evidence.</p></section>
 <div class="summary"><div><strong>{{ targets|length }}</strong><span>Configured targets</span></div><div><strong class="green">{{ counts.up }}</strong><span>Last check passed</span></div><div><strong class="red">{{ counts.down }}</strong><span>Last check failed</span></div></div>
-<section><div class="section-title"><h2>Your targets</h2><span>Manual checks · no background polling</span></div>
+<section><div class="section-title"><h2>Your targets</h2><span>Manual checks · optional scheduled monitoring · refresh for updates</span></div>
 <div class="targets">{% for key, target in targets.items() %}{% set last = latest.get(key) %}
 <article><div class="card-top"><span class="badge {{ last.status if last else 'pending' }}">{{ last.status|upper if last else 'NOT CHECKED' }}</span><span class="small">HTTP {{ last.status_code if last and last.status_code else '—' }}</span></div>
 <h3>{{ target.name }}</h3><p class="url">{{ target.url }}</p>
 <div class="measurement"><strong>{{ last.response_ms|round|int if last else '—' }}</strong><span>ms · response headers</span></div>
 <p class="timestamp">{{ last.checked_at if last else 'Run your first check to get a result.' }}</p>
 {% if last and last.error %}<p class="error">{{ last.error }}</p>{% endif %}
-<form action="/checks" method="post"><input type="hidden" name="target_id" value="{{ key }}"><button type="submit">Check now <span>↗</span></button></form></article>
+<form action="/checks" method="post"><input type="hidden" name="target_id" value="{{ key }}">{% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token }}"><small>Public demo: one manual check per target every 30 seconds, shared by all visitors.</small>{% endif %}<button type="submit">Check now <span>↗</span></button></form></article>
 {% endfor %}</div></section>
 <section class="history"><div class="section-title"><h2>Check history</h2><span>Latest 50 checks · UTC</span></div>
 {% if history %}<div class="table-wrap"><table><thead><tr><th>Target</th><th>Result</th><th>HTTP</th><th>Time</th><th>Checked at</th></tr></thead><tbody>

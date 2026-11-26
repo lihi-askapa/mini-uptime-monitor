@@ -1,0 +1,10 @@
+# DEMO_DOMAIN is provided by Compose, without https:// or a trailing slash.
+{$DEMO_DOMAIN} {
+    encode gzip
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy same-origin
+    }
+    reverse_proxy web:8080
+}

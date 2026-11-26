@@ -1,5 +1,6 @@
 import sqlite3
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -71,6 +72,49 @@ class MonitorTests(unittest.TestCase):
             result = self.client.application.test_cli_runner().invoke(args=["monitor", "--interval", "0"])
         self.assertEqual(result.exit_code, 2)
         call.assert_not_called()
+
+    def public_client(self):
+        return create_app({**self.config, "PUBLIC_DEMO": True,
+                           "SECRET_KEY": "test-only-secret"}).test_client()
+
+    def public_form(self, client):
+        client.get("/", base_url="https://demo.example")
+        with client.session_transaction(base_url="https://demo.example") as saved:
+            token = saved["csrf_token"]
+        return {"target_id": "demo", "csrf_token": token}
+
+    def test_public_demo_rejects_missing_form_token(self):
+        client = self.public_client()
+        with patch("app.urlopen") as call:
+            response = client.post("/checks", data={"target_id": "demo"},
+                                   base_url="https://demo.example")
+        self.assertEqual(response.status_code, 400)
+        call.assert_not_called()
+
+    def test_public_cooldown_is_shared_and_expires(self):
+        now = time.time()
+        first, second = self.public_client(), self.public_client()
+        first_form, second_form = self.public_form(first), self.public_form(second)
+        response = MagicMock()
+        response.__enter__.return_value.status = 200
+        with patch("app.urlopen", return_value=response) as call, patch("app.time.time", return_value=now):
+            self.assertEqual(first.post("/checks", data=first_form, base_url="https://demo.example").status_code, 303)
+            blocked = second.post("/checks", data=second_form, base_url="https://demo.example")
+            self.assertEqual(blocked.status_code, 429)
+            self.assertEqual(blocked.headers["Retry-After"], "30")
+            self.assertEqual(call.call_count, 1)
+        with patch("app.urlopen", return_value=response) as call, patch("app.time.time", return_value=now + 31):
+            self.assertEqual(second.post("/checks", data=second_form, base_url="https://demo.example").status_code, 303)
+            self.assertEqual(call.call_count, 1)
+
+    def test_public_scheduler_does_not_require_form_token(self):
+        app = self.public_client().application
+        response = MagicMock()
+        response.__enter__.return_value.status = 200
+        with patch("app.urlopen", return_value=response) as call:
+            result = app.test_cli_runner().invoke(args=["monitor", "--once"])
+        self.assertEqual(result.exit_code, 0, result.output)
+        self.assertEqual(call.call_count, 1)
 
 
 if __name__ == "__main__":
