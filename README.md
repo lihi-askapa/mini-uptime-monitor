@@ -2,6 +2,12 @@
 
 A small DevOps learning project by **Lihi Askapa**: build it, explain it, break it, investigate it.
 
+**[Open the live demo](https://pulse-13-60-191-46.sslip.io/)** — hosted on AWS EC2
+with Docker Compose and Caddy HTTPS. Checks are limited to three configured sites;
+manual checks share a 30-second per-target cooldown. Refresh to see scheduled results.
+This learning demo is available while the EC2 server is running; its IP-based
+hostname may change after a server stop/start.
+
 ## Stage 1: local application
 
 - Python + Flask, server-rendered HTML/CSS, SQLite.
@@ -99,9 +105,10 @@ The default configuration is a localhost learning application without authentica
 Direct `python app.py` uses Flask's development server; Docker uses Gunicorn with
 local-only port publishing and resource limits. Do not expose the development server publicly.
 
-An optional public demo configuration is prepared in `compose.public.yaml` and
+The public demo configuration is defined in `compose.public.yaml` and
 `Caddyfile`, with HTTPS, session form tokens and a shared 30-second per-target manual
-check cooldown. Ten tests pass locally; the public deployment is not yet verified.
+check cooldown. Ten tests passed inside the EC2 image. The user verified the public
+HTTPS page, a successful manual check and rejection of a repeated check.
 See [the public demo guide in Hebrew](docs/public-demo.md). This is a small demo,
 without DDoS protection, automatic history retention or general-purpose URL input.
 
@@ -113,7 +120,9 @@ without DDoS protection, automatic history retention or general-purpose URL inpu
 - [x] GitHub Actions Python tests
 - [x] GitHub Actions image build and container tests (green run confirmed by the user)
 - [x] Scheduled checks (seven unit tests passed; repeated container rounds confirmed in logs)
-- [ ] AWS training deployment and Terraform module
+- [x] Manual AWS EC2 deployment and public HTTPS demo
+- [ ] Terraform module
+- [ ] Automated deployment (CD)
 - [ ] AI-assisted review workflow with human approval
 
 See [learning notes](docs/learning-notes.md). Only completed stages should be described as hands-on experience in an interview.
