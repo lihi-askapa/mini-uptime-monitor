@@ -13,8 +13,11 @@ A small DevOps learning project by **Lihi Askapa**: build it, explain it, break 
 
 ## Run
 
+Use Python 3.12 (as in Docker and CI). The single `requirements.txt` includes both
+Flask and Gunicorn; do not use the Mac's older system Python for installation.
+
 ```bash
-python3 -m venv .venv
+python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
 python app.py

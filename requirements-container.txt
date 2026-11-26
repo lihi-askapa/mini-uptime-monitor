@@ -1,2 +1,0 @@
--r requirements.txt
-gunicorn==27.0.1

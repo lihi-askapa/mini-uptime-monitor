@@ -9,11 +9,11 @@ WORKDIR /app
 ARG OFFLINE_INSTALL=0
 
 # Copy dependencies first so application edits can reuse this build layer.
-COPY requirements*.txt ./
+COPY requirements.txt ./
 COPY wheelhouse/ /tmp/wheelhouse/
 RUN if [ "$OFFLINE_INSTALL" = "1" ]; then \
-        pip install --no-cache-dir --no-index --find-links=/tmp/wheelhouse -r requirements-container.txt; \
-    else pip install --no-cache-dir -r requirements-container.txt; fi \
+        pip install --no-cache-dir --no-index --find-links=/tmp/wheelhouse -r requirements.txt; \
+    else pip install --no-cache-dir -r requirements.txt; fi \
     && rm -rf /tmp/wheelhouse \
     && groupadd --gid 10001 appuser \
     && useradd --uid 10001 --gid appuser --create-home appuser \
