@@ -36,6 +36,18 @@ docker compose ps
 
 Open http://127.0.0.1:8081. Docker runs Gunicorn as a non-root user and stores SQLite in a named volume. This history is separate from the local Python history. See the [Docker lab in Hebrew](docs/docker-lab.md) for ports, logs, persistence and troubleshooting.
 
+## Stage 3: continuous integration
+
+The workflow in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on pushes,
+pull requests and manual requests from the GitHub Actions tab. An Ubuntu runner
+downloads the repository, sets up Python 3.12, installs `requirements.txt` and runs
+the same five unittest tests used locally. The tests use mocked HTTP responses and
+temporary databases; they do not check the live websites or use the application volume.
+
+The workflow starts running after the file is committed and pushed to GitHub.
+It currently tests Python code directly, without building or publishing a Docker
+image or deploying the application. See [the CI lab in Hebrew](docs/ci-lab.md).
+
 ## Configuration
 
 | Variable | Default | Purpose |

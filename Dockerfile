@@ -23,6 +23,7 @@ RUN if [ "$OFFLINE_INSTALL" = "1" ]; then \
 COPY --chown=appuser:appuser app.py .
 COPY --chown=appuser:appuser templates/ templates/
 COPY --chown=appuser:appuser static/ static/
+COPY --chown=appuser:appuser tests/ tests/
 
 USER appuser
 EXPOSE 8080

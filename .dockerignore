@@ -10,7 +10,6 @@ data
 .env.*
 !.env.example
 docs
-tests
 README.md
 .DS_Store
 .terraform
