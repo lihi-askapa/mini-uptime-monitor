@@ -8,6 +8,12 @@ manual checks share a 30-second per-target cooldown. Refresh to see scheduled re
 This learning demo is available while the EC2 server is running; its IP-based
 hostname may change after a server stop/start.
 
+## Project planning and context
+
+- [Project plan](docs/PLANNING.md): completed stages, upcoming work and completion criteria.
+- [Project context](docs/CONTEXT.md): architecture, environments, file responsibilities and where to resume.
+- [Learning notes](docs/learning-notes.md): the chronological record of exercises and troubleshooting.
+
 ## Stage 1: local application
 
 - Python + Flask, server-rendered HTML/CSS, SQLite.
