@@ -73,6 +73,53 @@ class MonitorTests(unittest.TestCase):
         self.assertEqual(result.exit_code, 2)
         call.assert_not_called()
 
+    def test_monitoring_health_requires_a_completed_round(self):
+        response = self.client.get("/health/monitoring")
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json["scheduler"], "no_completed_round")
+        self.assertEqual(self.client.get("/health").status_code, 200)
+
+    def test_monitoring_health_persists_and_expires_even_when_targets_are_down(self):
+        with patch("app.urlopen", side_effect=URLError("offline")), patch("app.time.time", return_value=1000):
+            result = self.client.application.test_cli_runner().invoke(args=["monitor", "--once"])
+        self.assertEqual(result.exit_code, 0, result.output)
+        restarted = create_app(self.config).test_client()
+        with patch("app.time.time", return_value=1180):
+            self.assertEqual(restarted.get("/health/monitoring").status_code, 200)
+        with patch("app.time.time", return_value=1181):
+            response = restarted.get("/health/monitoring")
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json["scheduler"], "stale")
+
+    def test_manual_check_does_not_hide_a_stale_scheduler(self):
+        response = MagicMock()
+        response.__enter__.return_value.status = 200
+        with patch("app.urlopen", return_value=response), patch("app.time.time", return_value=1000):
+            result = self.client.application.test_cli_runner().invoke(args=["monitor", "--once"])
+        self.assertEqual(result.exit_code, 0, result.output)
+        with patch("app.urlopen", return_value=response), patch("app.time.time", return_value=1200):
+            self.assertEqual(self.client.post("/checks", data={"target_id": "demo"}).status_code, 303)
+            self.assertEqual(self.client.get("/health/monitoring").status_code, 503)
+
+    def test_failed_round_does_not_advance_scheduler_heartbeat(self):
+        self.client.application.config["TARGETS"]["second"] = {
+            "name": "Second", "url": "https://example.org"}
+        with sqlite3.connect(self.path) as db:
+            db.execute("INSERT INTO monitor_state VALUES (1,1000)")
+        response = MagicMock()
+        response.__enter__.return_value.status = 200
+        with patch("app.urlopen", side_effect=[response, RuntimeError("interrupted")]):
+            result = self.client.application.test_cli_runner().invoke(args=["monitor", "--once"])
+        self.assertNotEqual(result.exit_code, 0)
+        with sqlite3.connect(self.path) as db:
+            self.assertEqual(db.execute("SELECT completed_at FROM monitor_state").fetchone()[0], 1000)
+
+    def test_monitoring_health_reports_database_failure(self):
+        Path(self.path).unlink()
+        response = self.client.get("/health/monitoring")
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json["database"], "unavailable")
+
     def public_client(self):
         return create_app({**self.config, "PUBLIC_DEMO": True,
                            "SECRET_KEY": "test-only-secret"}).test_client()

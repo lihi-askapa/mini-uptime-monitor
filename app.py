@@ -30,6 +30,7 @@ def create_app(test_config=None):
         PUBLIC_DEMO=os.environ.get("PUBLIC_DEMO", "0") == "1",
         SECRET_KEY=os.environ.get("SECRET_KEY") or secrets.token_hex(32),
         MAX_CONTENT_LENGTH=16384,
+        MONITOR_MAX_AGE_SECONDS=180,
     )
     if test_config:
         app.config.update(test_config)
@@ -59,6 +60,9 @@ def create_app(test_config=None):
         )""")
         db.execute("""CREATE TABLE IF NOT EXISTS manual_check_limits (
             target_id TEXT PRIMARY KEY, allowed_after REAL NOT NULL
+        )""")
+        db.execute("""CREATE TABLE IF NOT EXISTS monitor_state (
+            id INTEGER PRIMARY KEY CHECK (id = 1), completed_at REAL NOT NULL
         )""")
 
     @app.get("/")
@@ -137,6 +141,10 @@ def create_app(test_config=None):
             app.logger.info("Scheduled check round started")
             for target_id in app.config["TARGETS"]:
                 check_target(target_id)
+            # Only a fully saved scheduled round advances this heartbeat.
+            with connect() as db:
+                db.execute("INSERT OR REPLACE INTO monitor_state (id,completed_at) VALUES (1,?)",
+                           (time.time(),))
             if once:
                 return
             app.logger.info("Scheduled round finished; waiting %s seconds", interval)
@@ -152,6 +160,24 @@ def create_app(test_config=None):
             app.logger.exception("Database health check failed")
             return jsonify(status="degraded", database="unavailable"), 503
         return jsonify(status="ok", database="reachable", version="0.1.0")
+
+    @app.get("/health/monitoring")
+    def monitoring_health():
+        # Separate from Docker health: the scheduler waits for web health to start.
+        try:
+            with connect() as db:
+                row = db.execute("SELECT completed_at FROM monitor_state WHERE id=1").fetchone()
+        except sqlite3.Error:
+            app.logger.exception("Scheduler health check failed")
+            return jsonify(status="degraded", database="unavailable"), 503
+        if row is None:
+            return jsonify(status="degraded", scheduler="no_completed_round"), 503
+        age = time.time() - row["completed_at"]
+        healthy = 0 <= age <= app.config["MONITOR_MAX_AGE_SECONDS"]
+        return jsonify(status="ok" if healthy else "degraded",
+                       scheduler="recent" if healthy else "stale",
+                       last_round_age_seconds=round(age, 1),
+                       max_age_seconds=app.config["MONITOR_MAX_AGE_SECONDS"]), 200 if healthy else 503
 
     return app
 

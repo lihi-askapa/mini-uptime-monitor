@@ -20,6 +20,14 @@ hostname may change after a server stop/start.
 - Check configured websites on demand; record HTTP status, duration and UTC timestamp.
 - Display the latest result per target and the last 50 historical checks.
 - `GET /health` checks this application and database readability, independently of target status.
+- `GET /health/monitoring` checks the last completed scheduled round. It returns
+  503 until a round completes, or when that completion is over 180 seconds old.
+  Manual checks do not refresh this signal; target failures still count as
+  completed checks. This is separate from Docker health to avoid a startup
+  dependency cycle. A stopped optional scheduler will therefore report degraded.
+  With a custom scheduler interval, adjust `MONITOR_MAX_AGE_SECONDS` in the app
+  configuration to allow the interval plus the duration of a full round.
+  This local enhancement has 15 passing unit tests and is not deployed yet.
 - HTTP 200–399 is classified as up; other codes and connection failures as down. Redirects are followed by Python's HTTP client.
 - Duration measures time to receive response headers, not complete page load.
 
@@ -61,14 +69,19 @@ temporary databases; they do not check the live websites or use the application 
 
 The workflow starts running after the file is committed and pushed to GitHub.
 After the Python tests pass, it builds `mini-uptime-monitor:ci` and runs the same
-tests inside a temporary container from that image. No image is published and
-the application is not deployed. See [the CI lab in Hebrew](docs/ci-lab.md).
+tests inside a temporary container from that image. Successful main-branch runs
+publish the tested `linux/amd64` image to the private ECR repository using GitHub
+OIDC and a restricted IAM role. Tags identify the full commit SHA. Pull requests
+and other branches run checks without publishing. Publishing does not deploy EC2.
+See [the CI lab in Hebrew](docs/ci-lab.md).
 
-The next workflow revision is prepared to publish the tested `linux/amd64` image
-to the private project ECR repository after successful main-branch checks. It uses
-GitHub OIDC and a narrowly scoped IAM role, with commit-SHA image tags. Pull requests
-and other branches run checks without publishing. This revision still needs a commit,
-push and a successful remote run; it does not update EC2.
+The user verified publication and manually deployed image
+`d2e621bccaba25bcce26bdb75b8e9b748a6de9fb` on EC2. Its ten tests passed on the
+server; public health returned 200 and scheduler logs showed completed rounds.
+`compose.ecr.yaml` overrides web and scheduler images through required `APP_IMAGE`.
+Use it after the base and public Compose files, with `--no-build`. The server's
+instance role permits pulling only from the project repository. See
+[the public deployment guide](docs/public-demo.md) for the command sequence.
 
 ## Optional scheduled monitoring
 
@@ -87,8 +100,10 @@ docker compose stop scheduler
 ```
 
 The last command stops background checks while leaving `web` running. The scheduler
-has no HTTP listener or health check. Run one instance; there is no leader election,
-automatic restart or alerting. Configure targets consistently in both services if
+has no HTTP listener or Docker health check. The web endpoint `/health/monitoring`
+reports its completed-round freshness in the new local version. Run one scheduler
+instance; there is no leader election or alerting. The public overlay enables
+restart-unless-stopped policies; the base Compose configuration does not. Configure targets consistently in both services if
 overriding defaults. A database failure stops the worker and is visible in its logs.
 Stopping Docker stops monitoring. History has no retention limit yet; stop the
 worker after the exercise.

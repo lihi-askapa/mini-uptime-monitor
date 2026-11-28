@@ -36,7 +36,11 @@ SQLite שומר חלון המתנה של 30 שניות לכל אתר, במשות
 זו כתובת תרגול התלויה בשירות חיצוני ובכתובת הציבורית של EC2. אחרי עצירה והפעלה של השרת,
 ה־IP עשוי להשתנות; אז נדרש לעדכן גם את השם והקישורים. לא הוקצתה כתובת Elastic IP.
 
-## הפעלה בשרת, אחרי העברת הקבצים ובנייה
+## מסלול הבנייה הידני המקורי — לתיעוד
+
+הפריסה הפעילה עברה לשימוש באימג׳ מ־ECR. לניהול שלה משתמשים בשלושת הקבצים שבסעיף הבא.
+
+### הפעלה בשרת, אחרי העברת הקבצים ובנייה
 
 יש לוודא תחילה בקונסולת EC2 שכתובת השרת עדיין 13.60.191.46 ושפורטים 80 ו־443 פתוחים לציבור.
 את הפעולות הבאות מבצעים בתיקיית הפרויקט בשרת בלבד.
@@ -68,3 +72,31 @@ sudo env DEMO_DOMAIN=pulse-13-60-191-46.sslip.io docker compose -f compose.yaml 
 - https://sslip.io/
 - https://caddyserver.com/docs/automatic-https
 - https://hub.docker.com/_/caddy
+
+## פריסה מ־ECR — אומתה ב־28 בנובמבר 2026
+
+המשתמשת אימתה שהאתר והמתזמן רצים מהאימג׳ של הקומיט
+`d2e621bccaba25bcce26bdb75b8e9b748a6de9fb`, שעשר הבדיקות שבו עברו,
+שהכתובת הציבורית החזירה 200 ושהמתזמן השלים סבבים.
+בדיקת `/health/monitoring` ו־15 הבדיקות קיימות בינתיים מקומית ולא בפריסה הזאת.
+
+הפקודות הבאות הן מסלול הפריסה, לביצוע בשלבים מתוך תיקיית הפרויקט בשרת.
+בכל חלון SSH חדש מגדירים שוב את `APP_IMAGE` לגרסה שנבחרה; אין להשתמש בתג דוגמה לא קיים.
+הגרסה המופיעה כאן היא הגרסה הקיימת שאומתה, לא הפריסה של השינוי המקומי החדש.
+
+```bash
+export APP_IMAGE=944464821297.dkr.ecr.eu-north-1.amazonaws.com/mini-uptime-monitor:d2e621bccaba25bcce26bdb75b8e9b748a6de9fb
+aws ecr get-login-password --region eu-north-1 | sudo docker login --username AWS --password-stdin 944464821297.dkr.ecr.eu-north-1.amazonaws.com
+sudo docker pull "$APP_IMAGE"
+sudo docker run --rm "$APP_IMAGE" python -m unittest discover -s tests -v
+sudo env APP_IMAGE="$APP_IMAGE" DEMO_DOMAIN=pulse-13-60-191-46.sslip.io docker compose -f compose.yaml -f compose.public.yaml -f compose.ecr.yaml --profile monitoring config --images
+sudo env APP_IMAGE="$APP_IMAGE" DEMO_DOMAIN=pulse-13-60-191-46.sslip.io docker compose -f compose.yaml -f compose.public.yaml -f compose.ecr.yaml --profile monitoring up -d --no-build
+sudo docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}'
+curl -i --max-time 15 https://pulse-13-60-191-46.sslip.io/health
+sudo docker logs --tail=10 mini-uptime-monitor-scheduler-1
+```
+
+השרת משתמש בתפקיד שלו ולא בפרופיל האישי מהמק. ההרשאה מאפשרת משיכת אימג׳ים
+מהמאגר של הפרויקט; אינה מאפשרת העלאה אליו. שיוך הפרופיל לשרת בוצע ב־CLI מחוץ ל־Terraform.
+יש להעביר גם קובצי הגדרות שהשתנו לשרת; הורדת אימג׳ אינה מעדכנת את קובצי Compose שבשרת.
+יש לשמור את שלושת הווליומים. חיבור גיטהאב למאגר כבר אוטומטי, אך הפריסה לשרת עדיין ידנית.

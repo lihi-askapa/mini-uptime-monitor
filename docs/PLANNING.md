@@ -31,7 +31,7 @@ This is a learning demo. High availability, enterprise authentication, arbitrary
 | Manual AWS deployment | Complete | Application and scheduler run on a personal EC2 instance. |
 | Public HTTPS demo | Complete | User verified page loading, manual checks and repeated-check blocking. |
 | Terraform setup | In progress | Initialized and validated; ECR repository, GitHub OIDC provider and publishing role/policy created. Existing EC2 resources are not adopted. |
-| ECR image registry | In progress | Repository and restricted publishing permissions exist; workflow publication is prepared but not remotely verified. |
+| ECR image registry | In progress | CI publication, EC2 pull and manual deployment verified; registry retention remains planned. |
 | Controlled CD | Planned | A manually started or explicitly approved workflow deploys a tested version and verifies recovery behavior. |
 | ECS learning and evaluation | Planned | Explain the concepts and record whether a separate migration exercise is worthwhile. |
 
@@ -99,7 +99,7 @@ Completion: configuration validates, a reviewed plan matches the intended scope,
 
 Create a private image repository through Terraform. Define image tagging, repository permissions and an image-retention policy. Publish a tested image from CI and verify that the EC2 host can pull it.
 
-Current progress: the private repository exists with immutable tags and deletion protection in Terraform. GitHub's publishing role is restricted to this repository's immutable OIDC identity on main, with ECR image permissions scoped to the project repository. The workflow now prepares an explicit linux/amd64 build, tests it and publishes it under the commit SHA. The changes still need a commit, push and remote verification. Registry retention and EC2 pull permissions remain future work.
+Current progress: the private repository exists with immutable tags and deletion protection in Terraform. GitHub's publishing role is restricted to this repository's immutable OIDC identity on main, with ECR image permissions scoped to the project repository. The workflow now prepares an explicit linux/amd64 build, tests it and publishes it under the commit SHA. The user confirmed green CI, an image in ECR, pull-only EC2 role authentication, ten tests passing from the pulled image, and manual deployment of that image to web and scheduler. Public health returned 200 and scheduler logs showed completed rounds. Registry retention remains future work; deployment automation is not implemented.
 
 Use commit-based tags or image digests so deployment identifies a specific version. Plan for the Mac's ARM architecture and the server's x86 architecture: the deployment image must support the server.
 
@@ -129,7 +129,7 @@ Completion: Lihi can explain the tradeoffs. An actual migration is a separate de
 |---|---|---|
 | History retention | SQLite grows with every scheduled and manual check. | A documented policy and a tested cleanup path. |
 | Backup and restore | A Docker volume is persistence, not a backup; EC2 termination currently deletes the root disk. | Restore data into an isolated instance or volume and inspect it. |
-| Scheduler monitoring | The worker can stop while web health stays green. | Detect stale check timestamps or a missing worker and exercise the signal. |
+| Scheduler monitoring | Local implementation tested; not deployed. | Separate `/health/monitoring` uses a completed-round heartbeat with a 180-second freshness limit. Five tests added (15 total). Still verify a stopped worker on EC2 after deployment; no automatic alerts yet. |
 | Stable address | The current demo hostname embeds a public IP that may change. | A chosen address/domain strategy with its cost understood. |
 | Integration checks | Unit tests do not boot the entire Compose stack together. | A repeatable check of web, scheduler and shared storage. |
 | Cost tracking | EC2, storage and networking consume account credits. | Review actual usage and know how to stop and clean up resources. |

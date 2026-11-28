@@ -1,0 +1,6 @@
+# Use after compose.yaml and compose.public.yaml; deploy with --no-build.
+services:
+  web:
+    image: ${APP_IMAGE:?Set APP_IMAGE to the ECR image address}
+  scheduler:
+    image: ${APP_IMAGE:?Set APP_IMAGE to the ECR image address}

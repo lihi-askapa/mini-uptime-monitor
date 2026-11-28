@@ -18,10 +18,10 @@ Work is AI-assisted and guided. Do not describe generated code or assisted steps
 | Local containers | Web and optional scheduler, sharing one named data volume. |
 | AWS deployment | Manually deployed on EC2, with Caddy providing public HTTPS. |
 | CI | GitHub Actions tests Python code, builds the image and reruns tests in a container. |
-| Tests | Ten test methods in `tests/test_app.py`. |
+| Tests | Fifteen test methods in `tests/test_app.py`; all passed locally for the scheduler-health enhancement. Deployed image still has ten. |
 | CD | Not implemented. A GitHub push does not update AWS. |
 | Terraform | CLI initialized with AWS provider 6.74.0; ECR, GitHub OIDC and publishing role/policy applied. EC2 has not been imported. |
-| ECR | Private repository exists; GitHub publishing workflow prepared locally, with its first remote run pending. |
+| ECR | CI published commit d2e621bccaba25bcce26bdb75b8e9b748a6de9fb. User pulled and tested it on EC2 and confirmed web and scheduler run that image; public `/health` returned 200 through Caddy. |
 | ECS | Planned; not configured. |
 | Latest recorded validation | User confirmed green CI and working public page, manual checks and cooldown blocking on 2026-11-26. This file is not a live health check. |
 
@@ -81,9 +81,10 @@ Paths below are relative to the repository root.
 | `Dockerfile` | Python 3.12 image, dependency installation, code and tests, non-root user, Gunicorn and health check. |
 | `.dockerignore` | Exclude local data and unrelated files from the build context. |
 | `compose.yaml` | Base web service, optional scheduler, shared storage and local port mapping. |
+| `compose.ecr.yaml` | Override web and scheduler images using required APP_IMAGE; use after base and public files with --no-build. |
 | `compose.public.yaml` | Public overlay: public-demo mode, Caddy, certificate storage and restart policies. |
 | `Caddyfile` | Public hostname, HTTPS handling, response headers and reverse proxy to `web:8080`. |
-| `tests/test_app.py` | Ten automated tests with temporary databases and mocked HTTP responses. |
+| `tests/test_app.py` | Fifteen automated tests with temporary databases and mocked HTTP responses. |
 | `.github/workflows/ci.yml` | CI triggers and test/build steps; no deployment job. |
 | `.gitignore` | Keep databases, environment files, Terraform state, downloaded providers and wheel cache out of Git. |
 | `.env.example` | Configuration reference; Flask does not load it automatically. |
@@ -116,6 +117,16 @@ The scheduler reuses `check_target`. It checks targets sequentially, waits 60 se
 
 `GET /health` checks whether the application can read the checks table. Success returns 200; a database error returns 503. It does not verify database writes, target availability or scheduler liveness. The App health link and Docker health check use this route.
 
+Local, not yet deployed: `GET /health/monitoring` reads a separate singleton
+`monitor_state` table. Only completion of a full scheduled round updates its
+epoch timestamp. Missing or older-than-180-second completion returns 503;
+recent completion returns 200 even if monitored websites are down. Manual checks
+cannot hide a stale scheduler. The table is created additively on startup;
+existing check history is retained. Docker still uses `/health` because the
+scheduler depends on web becoming healthy before starting. This signal does not
+check UI behavior or send alerts. With a custom CLI interval, adjust the Flask
+configuration `MONITOR_MAX_AGE_SECONDS` to allow that interval and round duration.
+
 SQLite is the embedded database engine; `sqlite3` is its Python interface; `checks.db` is the data file. The database contains `checks` and `manual_check_limits`. A Docker volume survives container replacement but is not a backup and does not survive deleting its underlying storage.
 
 ## Public-demo behavior
@@ -128,7 +139,7 @@ The application generates a session-signing key on startup unless `SECRET_KEY` i
 
 ## Test inventory
 
-The suite grew from five to seven to ten tests as features were added. Notify Lihi before adding, removing or changing tests.
+The suite grew from five to seven to ten, and now fifteen local tests as features were added. Notify Lihi before adding, removing or changing tests.
 
 1. Successful checks persist across application restart.
 2. HTTP errors record their code without marking the monitoring application unhealthy.
@@ -140,6 +151,11 @@ The suite grew from five to seven to ten tests as features were added. Notify Li
 8. Public manual requests without the form token are rejected.
 9. The public cooldown is shared across visitors and expires.
 10. The scheduler works in public-demo mode without a form token.
+11. Missing scheduled rounds report degraded without breaking basic web health.
+12. Completed-round freshness persists across app restarts, expires at the threshold, and is independent of target availability.
+13. Manual checks cannot hide a stale scheduler.
+14. An interrupted round does not advance the last completed-round timestamp.
+15. Scheduler health reports database failure.
 
 The database-failure test intentionally logs an error. The test succeeds when the expected 503 is returned; look for `ok` and the final summary rather than treating every ERROR log as a failed test. These tests do not constitute a full multi-container integration or load test.
 
@@ -174,11 +190,13 @@ User-confirmed applies created the ECR repository, GitHub OIDC provider, IAM rol
 
 GitHub's OIDC API reported immutable subjects enabled, with prefix `repo:lihi-askapa@223032576/mini-uptime-monitor@1470667743`. The role trusts exactly that subject with `:ref:refs/heads/main` and audience `sts.amazonaws.com`.
 
-The current local workflow revision explicitly builds linux/amd64 on an x86 Ubuntu runner, runs the existing ten tests and then authenticates through OIDC to publish on main pushes or manual main runs. Pull requests do not publish. Tags use the full commit SHA; reruns retain an already published immutable tag. No AWS deployment is performed. The first remote authentication and image upload have not been verified.
+The workflow was committed in d2e621b and the user confirmed green CI and an ECR image tagged with the full commit SHA. EC2's pull-only role and instance profile were created through Terraform and attached to the existing server using the AWS CLI. The server identity was verified, Docker authenticated, the image was pulled, and all ten deployed tests passed. The user switched web and scheduler to the ECR image and confirmed their image names with docker ps and public /health HTTP 200 through Caddy.
 
-Next: review the workflow changes with Lihi, commit and push the two new IAM Terraform files plus workflow/documentation changes, and inspect the resulting GitHub run. Confirm an image is stored in ECR before planning EC2 pull access. The local Mac image was inspected as linux/arm64 and should not be used directly for the x86 EC2 server.
+The user created compose.ecr.yaml on EC2, and it is now also prepared locally for Git; it overrides both application service images using required APP_IMAGE. Public deployments now require all three Compose files, APP_IMAGE and DEMO_DOMAIN, the monitoring profile and --no-build. APP_IMAGE was exported in the SSH shell and is not durable configuration yet. Commit the local overlay with the other changes. APP_IMAGE must be set again in each new deployment shell; restarting existing containers does not require the variable. The EC2 role Terraform file is still uncommitted locally.
 
-Do not claim CD is complete. SSM setup, EC2 image-pull permissions, deployment orchestration and rollback remain pending. Recheck `git status`, Terraform state and current cloud identity on continuation.
+Next: explain the new local scheduler-health implementation and review the diff with Lihi. Fifteen tests passed locally. Commit/publish a new image and deploy it deliberately, then verify /health/monitoring, including a stopped-scheduler exercise and recovery. The live image still has the original ten tests and no monitoring-health endpoint. No cloud deployment was performed for this enhancement.
+
+Do not claim CD is complete. SSM setup, deployment orchestration and rollback remain pending. Recheck git status, Terraform state and current cloud identity on continuation.
 
 ## Teaching and collaboration preferences
 
