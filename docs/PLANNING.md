@@ -30,7 +30,7 @@ This is a learning demo. High availability, enterprise authentication, arbitrary
 | Scheduled checks | Complete | Separate worker checks configured targets and saves into shared SQLite storage. |
 | Manual AWS deployment | Complete | Application and scheduler run on a personal EC2 instance. |
 | Public HTTPS demo | Complete | User verified page loading, manual checks and repeated-check blocking. |
-| Terraform setup | In progress | Initialized and validated; ECR repository, GitHub OIDC provider and publishing role/policy created. Existing EC2 resources are not adopted. |
+| Terraform foundations | Complete for current scope | ECR, IAM/SSM, backup and state buckets managed; versioned encrypted S3 state migrated and locking verified. Existing EC2 resources are not adopted. |
 | ECR image registry | In progress | CI publication, EC2 pull and manual deployment verified; registry retention remains planned. |
 | Controlled CD | Verified for compatible image versions | Manual GitHub workflow deployed cda4c66 and returned to b13144f; both runs passed health verification. Database migration rollback remains outside this exercise. |
 | ECS learning and evaluation | Deferred | Explain the concepts and record whether a separate migration exercise is worthwhile. |
@@ -81,7 +81,7 @@ Enable form-token validation and a shared 30-second per-target cooldown for manu
 
 ### 7. Introduce Terraform safely
 
-Terraform 1.17.2 is installed and initialized on the Mac with AWS provider 6.74.0. The user validated and applied the ECR repository, GitHub OIDC provider and publishing IAM role/policy in the personal account. A follow-up plan confirmed no changes after ECR creation. State is local and excluded from Git. The existing EC2 server remains unmanaged by Terraform.
+Terraform 1.17.2 is installed and initialized on the Mac with AWS provider 6.74.0. The user validated and applied the ECR repository, GitHub OIDC provider and publishing IAM role/policy in the personal account. A follow-up plan confirmed no changes after ECR creation. State was subsequently migrated to private versioned S3 storage with native locking; it remains excluded from Git. The existing EC2 server remains unmanaged by Terraform.
 
 Next actions:
 
@@ -89,7 +89,7 @@ Next actions:
 2. Explain provider installation, the dependency lock file and the distinction between `init`, `validate`, `plan` and `apply`.
 3. Establish a named personal AWS authentication path and verify the account identity before planning cloud changes. Keep work-account credentials separate.
 4. Decide which resources Terraform will own first. A proposed small first resource is the ECR repository needed for CD.
-5. Decide local versus remote state storage, access controls and locking before infrastructure ownership expands. Never commit state or credentials.
+5. Completed: dedicated encrypted, versioned S3 backend and native S3 locking, with local recovery snapshots. Migration retained 24 resource records/outputs, a plan reported no changes and a concurrent plan was blocked. Never commit state or credentials.
 6. For the existing server and security group, write a deliberate import/adoption plan. Review the resulting plan before applying; resolve replacement or deletion proposals before proceeding.
 7. Introduce modules and environment inputs when they clarify a real separation in the project.
 

@@ -184,7 +184,7 @@ For public update commands and troubleshooting, use [public-demo.md](public-demo
 
 ## Current continuation point
 
-Terraform 1.17.2 is initialized with AWS provider 6.74.0. `main.tf`, `ecr.tf` and `.terraform.lock.hcl` were committed and pushed in `ce15559`. State stays local and is excluded from Git. Do not delete it or assume an empty state means cloud resources are absent.
+Terraform 1.17.2 is initialized with AWS provider 6.74.0. `main.tf`, `ecr.tf` and `.terraform.lock.hcl` were committed and pushed in `ce15559`. State now lives in the dedicated versioned S3 backend described below and remains excluded from Git. Do not delete it or assume an empty state means cloud resources are absent.
 
 Personal AWS CLI authentication uses profile `pulse-personal`, created with `aws login`. The profile was verified against account 944464821297, and its region was set to eu-north-1. The user exported AWS_PROFILE in the working shell; a new shell may need it again. Credentials are temporary and may require another login.
 
@@ -202,7 +202,7 @@ SSM prerequisite verified on 2026-11-28: Terraform attached AmazonSSMManagedInst
 
 Troubleshooting note: the initial IAM simulation omitted aws:RequestedRegion and returned explicitDeny/AllowedByOrganizations=false. Repeating with eu-north-1 returned allowed/true. Do not interpret the initial result as proof of a blanket organization denial or a need to upgrade the account. The agent initially received AccessDenied and used a long retry backoff; exact cause/timing of recovery was not isolated. The new AWS sign-in experience uses AWS Settings at https://settings.aws.com/ and the Idea Launchpad project; do not assume an IAM username or root login exists for this identity.
 
-Current next step: finish the version-one project documentation using the verified CD, rollback and backup evidence below. ECS remains deferred. Alerting, remote Terraform state and stable addressing are future work; daily S3 backups are configured as recorded below. Recheck git status, Terraform state and cloud identity on continuation.
+Current next step: finish the version-one project documentation using the verified CD, rollback and backup evidence below. ECS remains deferred. Alerting and stable addressing are future work; remote Terraform state has been implemented; daily S3 backups are configured as recorded below. Recheck git status, Terraform state and cloud identity on continuation.
 
 ## Teaching and collaboration preferences
 
@@ -326,3 +326,35 @@ rebuild is needed. The live database was never replaced. See backup-restore.md.
 Next: finish version-one demonstration documentation and commit the completed
 backup/rollback evidence and automation sources. Do not commit DB artifacts or
 Terraform state. Continue deferred improvements only when requested.
+
+## Terraform state migrated to S3 on 2026-11-28
+
+backend.tf now selects pulse-944464821297-tfstate-eu-north-1/pulse/terraform.tfstate
+in eu-north-1, with encryption, use_lockfile=true and allowed_account_ids restricted
+to 944464821297. Terraform's minimum is now 1.10 for native S3 locking; installed
+version remains 1.17.2. No DynamoDB table is used. state-storage.tf manages the
+private versioned bucket, public access blocks, AES256 encryption, ownership and
+TLS policy. Unlike SQLite backups, state has no expiration rule.
+
+The existing local backend created six new state-storage resources from a reviewed
+saved plan (zero changes/deletions). Private snapshots before creation (18 resources)
+and immediately before migration (24 resources) were saved outside Git under
+/Users/lihias/Documents/Codex/pulse-private/terraform-state/. Target prefix was empty.
+The authorized init -migrate-state -force-copy operation succeeded; state pull
+confirmed all 24 resource records and outputs exactly match the pre-migration
+snapshot. The S3 backend initialized a new lineage and serial (1); old recovery
+copies retain the original metadata. Do not claim the lineage was preserved.
+An encrypted S3 object with a version ID exists. A full plan returned No changes.
+An actual concurrent plan was blocked by the first plan's S3 lock, and the lock
+was released normally afterward. The local private migration verification JSON
+records checks and the initial S3 version ID. See docs/terraform-state.md.
+
+Use AWS_PROFILE=pulse-personal with ordinary terraform init/plan on the Mac.
+New clones should connect with init, not repeat migration/force-copy. No runtime
+or GitHub role was granted access to the state bucket. The bucket manages its own
+resource records; loss of the bucket requires deliberate bootstrap/recovery.
+The existing server and security group still have not been imported.
+
+Next: commit/push the backend configuration and state documentation, verify CI,
+and finish the version-one demonstration guide. No application deployment is
+needed for this state-location change. Application tests remain fifteen.

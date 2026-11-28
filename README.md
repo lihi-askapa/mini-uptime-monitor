@@ -11,6 +11,7 @@ hostname may change after a server stop/start.
 ## Project planning and context
 
 - [Project plan](docs/PLANNING.md): completed stages, upcoming work and completion criteria.
+- [Terraform state](docs/terraform-state.md): private versioned S3 storage, locking and recovery.
 - [Project context](docs/CONTEXT.md): architecture, environments, file responsibilities and where to resume.
 - [Learning notes](docs/learning-notes.md): the chronological record of exercises and troubleshooting.
 
@@ -179,3 +180,12 @@ The first service run uploaded successfully, and its S3 copy passed isolated res
 checks. The timer runs around 03:00 UTC and retries failures after 15 minutes.
 These are separate `.db` snapshots, not a continuously updated replica.
 See [backup instructions and evidence](docs/backup-restore.md).
+
+## Terraform state storage
+
+Terraform now uses a dedicated private, encrypted and versioned S3 backend with
+native S3 locking. Migration preserved all 24 managed resource records and outputs;
+a follow-up plan showed no changes and a concurrent plan was blocked by the lock.
+The state bucket has no expiration rule and is separate from daily SQLite backups.
+See [state operations and recovery](docs/terraform-state.md). EC2 itself remains
+outside Terraform management; the state covers only the resources in the configuration.
