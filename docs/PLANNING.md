@@ -33,7 +33,7 @@ This is a learning demo. High availability, enterprise authentication, arbitrary
 | Terraform setup | In progress | Initialized and validated; ECR repository, GitHub OIDC provider and publishing role/policy created. Existing EC2 resources are not adopted. |
 | ECR image registry | In progress | CI publication, EC2 pull and manual deployment verified; registry retention remains planned. |
 | Controlled CD | Planned | A manually started or explicitly approved workflow deploys a tested version and verifies recovery behavior. |
-| ECS learning and evaluation | Planned | Explain the concepts and record whether a separate migration exercise is worthwhile. |
+| ECS learning and evaluation | Deferred | Explain the concepts and record whether a separate migration exercise is worthwhile. |
 
 ## Completed stages and decisions
 
@@ -107,6 +107,8 @@ Completion: a tested image is present in ECR and the server can retrieve the exa
 
 ### 9. Build controlled CD
 
+SSM prerequisite completed on 2026-11-28: Terraform attached the managed SSM core policy to the EC2 role; the user confirmed Online status and a successful remote whoami returning root. GitHub deployment permissions and the deployment workflow are not implemented.
+
 Proposed approach: GitHub authenticates to AWS through OIDC and receives temporary permissions. Systems Manager sends a bounded deployment operation to the intended EC2 host. Keep the initial trigger manual; do not assume GitHub environment approval features are available for the repository's plan and visibility.
 
 Define the EC2 instance role, GitHub trust restrictions, deployment permissions and image-pull permissions separately. Restrict the intended repository, branch or environment, account and target server. Do not store the personal SSH private key in the repository.
@@ -115,7 +117,9 @@ Deploy a specific image version, avoid overlapping deployments, preserve volumes
 
 Completion: a controlled run deploys the requested tested version, reports its checks and demonstrates a recoverable failure path. Do not claim zero downtime or automatic rollback before testing them.
 
-### 10. Learn ECS and decide whether to migrate
+### 10. Learn ECS and decide whether to migrate (deferred)
+
+The user chose to continue CD on the current EC2/Compose stack first. Revisit this stage later.
 
 Explain clusters, task definitions, tasks and services, and compare EC2-backed capacity with Fargate. Relate each concept to the Compose setup already understood.
 
@@ -129,7 +133,7 @@ Completion: Lihi can explain the tradeoffs. An actual migration is a separate de
 |---|---|---|
 | History retention | SQLite grows with every scheduled and manual check. | A documented policy and a tested cleanup path. |
 | Backup and restore | A Docker volume is persistence, not a backup; EC2 termination currently deletes the root disk. | Restore data into an isolated instance or volume and inspect it. |
-| Scheduler monitoring | Local implementation tested; not deployed. | Separate `/health/monitoring` uses a completed-round heartbeat with a 180-second freshness limit. Five tests added (15 total). Still verify a stopped worker on EC2 after deployment; no automatic alerts yet. |
+| Scheduler monitoring | Deployed and verified on EC2. | Fifteen tests passed; user stopped the worker, observed 503 after the 180-second limit, restarted it and confirmed recovery to 200 on 2026-11-28. No automatic alerts yet. |
 | Stable address | The current demo hostname embeds a public IP that may change. | A chosen address/domain strategy with its cost understood. |
 | Integration checks | Unit tests do not boot the entire Compose stack together. | A repeatable check of web, scheduler and shared storage. |
 | Cost tracking | EC2, storage and networking consume account credits. | Review actual usage and know how to stop and clean up resources. |

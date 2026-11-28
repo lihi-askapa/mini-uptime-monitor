@@ -27,7 +27,8 @@ hostname may change after a server stop/start.
   dependency cycle. A stopped optional scheduler will therefore report degraded.
   With a custom scheduler interval, adjust `MONITOR_MAX_AGE_SECONDS` in the app
   configuration to allow the interval plus the duration of a full round.
-  This local enhancement has 15 passing unit tests and is not deployed yet.
+  This enhancement has 15 passing tests and was verified on EC2, including
+  stopped-scheduler detection (503) and recovery (200).
 - HTTP 200–399 is classified as up; other codes and connection failures as down. Redirects are followed by Python's HTTP client.
 - Duration measures time to receive response headers, not complete page load.
 
@@ -76,7 +77,7 @@ and other branches run checks without publishing. Publishing does not deploy EC2
 See [the CI lab in Hebrew](docs/ci-lab.md).
 
 The user verified publication and manually deployed image
-`d2e621bccaba25bcce26bdb75b8e9b748a6de9fb` on EC2. Its ten tests passed on the
+`b13144f3ef327628849a377f409dfef02ce77a5d` on EC2. Its fifteen tests passed on the
 server; public health returned 200 and scheduler logs showed completed rounds.
 `compose.ecr.yaml` overrides web and scheduler images through required `APP_IMAGE`.
 Use it after the base and public Compose files, with `--no-build`. The server's
@@ -101,7 +102,7 @@ docker compose stop scheduler
 
 The last command stops background checks while leaving `web` running. The scheduler
 has no HTTP listener or Docker health check. The web endpoint `/health/monitoring`
-reports its completed-round freshness in the new local version. Run one scheduler
+reports its completed-round freshness. Run one scheduler
 instance; there is no leader election or alerting. The public overlay enables
 restart-unless-stopped policies; the base Compose configuration does not. Configure targets consistently in both services if
 overriding defaults. A database failure stops the worker and is visible in its logs.
@@ -134,10 +135,17 @@ local-only port publishing and resource limits. Do not expose the development se
 
 The public demo configuration is defined in `compose.public.yaml` and
 `Caddyfile`, with HTTPS, session form tokens and a shared 30-second per-target manual
-check cooldown. Ten tests passed inside the EC2 image. The user verified the public
+check cooldown. Fifteen tests passed inside the current EC2 image. The user verified the public
 HTTPS page, a successful manual check and rejection of a repeated check.
 See [the public demo guide in Hebrew](docs/public-demo.md). This is a small demo,
 without DDoS protection, automatic history retention or general-purpose URL input.
+
+## Deployment automation preparation
+
+SSM connectivity was verified on 2026-11-28. Terraform attaches the managed
+SSM core policy to the EC2 role; a diagnostic command sent from the personal
+AWS CLI returned Success and root. GitHub deployment authorization and the
+CD workflow are still pending. A push publishes an image but does not deploy it.
 
 ## Learning roadmap
 

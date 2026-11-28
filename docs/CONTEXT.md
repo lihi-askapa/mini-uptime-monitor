@@ -18,12 +18,13 @@ Work is AI-assisted and guided. Do not describe generated code or assisted steps
 | Local containers | Web and optional scheduler, sharing one named data volume. |
 | AWS deployment | Manually deployed on EC2, with Caddy providing public HTTPS. |
 | CI | GitHub Actions tests Python code, builds the image and reruns tests in a container. |
-| Tests | Fifteen test methods in `tests/test_app.py`; all passed locally for the scheduler-health enhancement. Deployed image still has ten. |
+| Tests | Fifteen test methods in `tests/test_app.py`; all passed locally, in green CI and in the pulled EC2 image. |
 | CD | Not implemented. A GitHub push does not update AWS. |
-| Terraform | CLI initialized with AWS provider 6.74.0; ECR, GitHub OIDC and publishing role/policy applied. EC2 has not been imported. |
-| ECR | CI published commit d2e621bccaba25bcce26bdb75b8e9b748a6de9fb. User pulled and tested it on EC2 and confirmed web and scheduler run that image; public `/health` returned 200 through Caddy. |
-| ECS | Planned; not configured. |
-| Latest recorded validation | User confirmed green CI and working public page, manual checks and cooldown blocking on 2026-11-26. This file is not a live health check. |
+| Terraform | AWS provider 6.74.0; ECR, OIDC, publishing role, EC2 role/profile and SSM policy attachment applied. EC2 itself has not been imported. |
+| ECR | Current manually deployed image: b13144f3ef327628849a377f409dfef02ce77a5d; fifteen tests passed on EC2. |
+| SSM | Server Online; personal CLI sent whoami and retrieved Success/root. GitHub deployment permissions are not configured. |
+| ECS | Deferred by the user; continue CD on existing EC2 and Compose. |
+| Latest recorded validation | On 2026-11-28, user confirmed scheduler-health failure/recovery and successful SSM command execution. This file is not a live health check. |
 
 ## Repository and environments
 
@@ -81,6 +82,7 @@ Paths below are relative to the repository root.
 | `Dockerfile` | Python 3.12 image, dependency installation, code and tests, non-root user, Gunicorn and health check. |
 | `.dockerignore` | Exclude local data and unrelated files from the build context. |
 | `compose.yaml` | Base web service, optional scheduler, shared storage and local port mapping. |
+| `infra/terraform/ec2-ssm.tf` | Attach AWS-managed SSM core permissions to the existing EC2 role; no GitHub command permissions. |
 | `compose.ecr.yaml` | Override web and scheduler images using required APP_IMAGE; use after base and public files with --no-build. |
 | `compose.public.yaml` | Public overlay: public-demo mode, Caddy, certificate storage and restart policies. |
 | `Caddyfile` | Public hostname, HTTPS handling, response headers and reverse proxy to `web:8080`. |
@@ -117,7 +119,7 @@ The scheduler reuses `check_target`. It checks targets sequentially, waits 60 se
 
 `GET /health` checks whether the application can read the checks table. Success returns 200; a database error returns 503. It does not verify database writes, target availability or scheduler liveness. The App health link and Docker health check use this route.
 
-Local, not yet deployed: `GET /health/monitoring` reads a separate singleton
+Deployed and verified: `GET /health/monitoring` reads a separate singleton
 `monitor_state` table. Only completion of a full scheduled round updates its
 epoch timestamp. Missing or older-than-180-second completion returns 503;
 recent completion returns 200 even if monitored websites are down. Manual checks
@@ -192,11 +194,17 @@ GitHub's OIDC API reported immutable subjects enabled, with prefix `repo:lihi-as
 
 The workflow was committed in d2e621b and the user confirmed green CI and an ECR image tagged with the full commit SHA. EC2's pull-only role and instance profile were created through Terraform and attached to the existing server using the AWS CLI. The server identity was verified, Docker authenticated, the image was pulled, and all ten deployed tests passed. The user switched web and scheduler to the ECR image and confirmed their image names with docker ps and public /health HTTP 200 through Caddy.
 
-The user created compose.ecr.yaml on EC2, and it is now also prepared locally for Git; it overrides both application service images using required APP_IMAGE. Public deployments now require all three Compose files, APP_IMAGE and DEMO_DOMAIN, the monitoring profile and --no-build. APP_IMAGE was exported in the SSH shell and is not durable configuration yet. Commit the local overlay with the other changes. APP_IMAGE must be set again in each new deployment shell; restarting existing containers does not require the variable. The EC2 role Terraform file is still uncommitted locally.
+The ECR overlay and EC2 role configuration were committed and pushed in b13144f. The user confirmed green CI, pulled image b13144f3ef327628849a377f409dfef02ce77a5d, ran all fifteen tests successfully on EC2 and updated both app services with all three Compose files and --no-build. APP_IMAGE was exported in the SSH shell; it must be set again for future deployment commands. Restarting existing containers does not require it.
 
-Next: explain the new local scheduler-health implementation and review the diff with Lihi. Fifteen tests passed locally. Commit/publish a new image and deploy it deliberately, then verify /health/monitoring, including a stopped-scheduler exercise and recovery. The live image still has the original ten tests and no monitoring-health endpoint. No cloud deployment was performed for this enhancement.
+On 2026-11-28, the user verified /health/monitoring returned 200 (recent), stopped the scheduler, observed 503 with stale status at age 295.2 seconds, restarted it and confirmed recovery to 200 at age 21.0 seconds. The scheduler is running again. No automatic alerts are configured.
 
-Do not claim CD is complete. SSM setup, deployment orchestration and rollback remain pending. Recheck git status, Terraform state and current cloud identity on continuation.
+SSM prerequisite verified on 2026-11-28: Terraform attached AmazonSSMManagedInstanceCore to the existing EC2 role using infra/terraform/ec2-ssm.tf. The user confirmed the policy attachment, successful agent control-channel connection and Online status. Command a77969b2-0f06-4713-bba0-d0d85d10968a ran whoami through AWS-RunShellScript, returning Success, root and empty stderr. This was a diagnostic command, not a deployment.
+
+Troubleshooting note: the initial IAM simulation omitted aws:RequestedRegion and returned explicitDeny/AllowedByOrganizations=false. Repeating with eu-north-1 returned allowed/true. Do not interpret the initial result as proof of a blanket organization denial or a need to upgrade the account. The agent initially received AccessDenied and used a long retry backoff; exact cause/timing of recovery was not isolated. The new AWS sign-in experience uses AWS Settings at https://settings.aws.com/ and the Idea Launchpad project; do not assume an IAM username or root login exists for this identity.
+
+Next: commit this SSM milestone and updated deployment evidence. Continue controlled CD on the existing EC2/Compose stack; ECS is deferred. Prepare a separate GitHub deployment role and bounded SSM deployment document/workflow, with a manual trigger and application plus scheduler health verification.
+
+Do not claim CD is complete. GitHub deployment authorization, deployment orchestration and rollback remain pending. Recheck git status, Terraform state and current cloud identity on continuation.
 
 ## Teaching and collaboration preferences
 

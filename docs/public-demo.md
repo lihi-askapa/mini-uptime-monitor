@@ -78,14 +78,16 @@ sudo env DEMO_DOMAIN=pulse-13-60-191-46.sslip.io docker compose -f compose.yaml 
 המשתמשת אימתה שהאתר והמתזמן רצים מהאימג׳ של הקומיט
 `d2e621bccaba25bcce26bdb75b8e9b748a6de9fb`, שעשר הבדיקות שבו עברו,
 שהכתובת הציבורית החזירה 200 ושהמתזמן השלים סבבים.
-בדיקת `/health/monitoring` ו־15 הבדיקות קיימות בינתיים מקומית ולא בפריסה הזאת.
+בהמשך נפרסה הגרסה `b13144f3ef327628849a377f409dfef02ce77a5d`: כל 15 הבדיקות עברו גם בשרת.
+בדיקת `/health/monitoring` החזירה 200, אחרי עצירת המתזמן החזירה 503, ולאחר הפעלתו מחדש חזרה ל־200.
+המתזמן הוחזר לפעולה בסיום התרגיל.
 
 הפקודות הבאות הן מסלול הפריסה, לביצוע בשלבים מתוך תיקיית הפרויקט בשרת.
 בכל חלון SSH חדש מגדירים שוב את `APP_IMAGE` לגרסה שנבחרה; אין להשתמש בתג דוגמה לא קיים.
-הגרסה המופיעה כאן היא הגרסה הקיימת שאומתה, לא הפריסה של השינוי המקומי החדש.
+הגרסה המופיעה כאן היא הגרסה הקיימת שאומתה, כולל בדיקת בריאות המתזמן.
 
 ```bash
-export APP_IMAGE=944464821297.dkr.ecr.eu-north-1.amazonaws.com/mini-uptime-monitor:d2e621bccaba25bcce26bdb75b8e9b748a6de9fb
+export APP_IMAGE=944464821297.dkr.ecr.eu-north-1.amazonaws.com/mini-uptime-monitor:b13144f3ef327628849a377f409dfef02ce77a5d
 aws ecr get-login-password --region eu-north-1 | sudo docker login --username AWS --password-stdin 944464821297.dkr.ecr.eu-north-1.amazonaws.com
 sudo docker pull "$APP_IMAGE"
 sudo docker run --rm "$APP_IMAGE" python -m unittest discover -s tests -v
@@ -100,3 +102,10 @@ sudo docker logs --tail=10 mini-uptime-monitor-scheduler-1
 מהמאגר של הפרויקט; אינה מאפשרת העלאה אליו. שיוך הפרופיל לשרת בוצע ב־CLI מחוץ ל־Terraform.
 יש להעביר גם קובצי הגדרות שהשתנו לשרת; הורדת אימג׳ אינה מעדכנת את קובצי Compose שבשרת.
 יש לשמור את שלושת הווליומים. חיבור גיטהאב למאגר כבר אוטומטי, אך הפריסה לשרת עדיין ידנית.
+
+## הכנה ל־CD: חיבור SSM אומת
+
+ב־28 בנובמבר 2026 חוברה דרך Terraform מדיניות AmazonSSMManagedInstanceCore
+לתפקיד הקיים של השרת. המשתמשת אימתה Online ושלחה מהמק פקודת whoami דרך SSM.
+הפקודה הסתיימה ב־Success, החזירה root וללא שגיאה. זו בדיקת חיבור, לא פריסה.
+הרשאות פריסה לגיטהאב, תהליך CD וחזרה לגרסה קודמת עדיין לא הוגדרו.
