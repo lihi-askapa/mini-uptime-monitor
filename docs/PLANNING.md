@@ -1,6 +1,6 @@
 # Pulse project planning
 
-Last updated: 2026-11-27
+Last updated: 2026-11-28
 
 Pulse is a small uptime-monitoring application used to learn DevOps through a working project. The aim is to build, operate, investigate and explain the system, and to share a public demonstration with interviewers and portfolio visitors.
 
@@ -30,8 +30,8 @@ This is a learning demo. High availability, enterprise authentication, arbitrary
 | Scheduled checks | Complete | Separate worker checks configured targets and saves into shared SQLite storage. |
 | Manual AWS deployment | Complete | Application and scheduler run on a personal EC2 instance. |
 | Public HTTPS demo | Complete | User verified page loading, manual checks and repeated-check blocking. |
-| Terraform setup | In progress | Terraform installed; initial provider configuration written. No initialization or apply completed. |
-| ECR image registry | Planned | Store and retrieve a tested image identified by its commit. |
+| Terraform setup | In progress | Initialized and validated; ECR repository, GitHub OIDC provider and publishing role/policy created. Existing EC2 resources are not adopted. |
+| ECR image registry | In progress | Repository and restricted publishing permissions exist; workflow publication is prepared but not remotely verified. |
 | Controlled CD | Planned | A manually started or explicitly approved workflow deploys a tested version and verifies recovery behavior. |
 | ECS learning and evaluation | Planned | Explain the concepts and record whether a separate migration exercise is worthwhile. |
 
@@ -81,7 +81,7 @@ Enable form-token validation and a shared 30-second per-target cooldown for manu
 
 ### 7. Introduce Terraform safely
 
-Current preparation: Terraform 1.17.2 is installed on the Mac. `infra/terraform/main.tf` declares Terraform and AWS-provider requirements, the Stockholm region and the permitted personal AWS account.
+Terraform 1.17.2 is installed and initialized on the Mac with AWS provider 6.74.0. The user validated and applied the ECR repository, GitHub OIDC provider and publishing IAM role/policy in the personal account. A follow-up plan confirmed no changes after ECR creation. State is local and excluded from Git. The existing EC2 server remains unmanaged by Terraform.
 
 Next actions:
 
@@ -98,6 +98,8 @@ Completion: configuration validates, a reviewed plan matches the intended scope,
 ### 8. Add ECR
 
 Create a private image repository through Terraform. Define image tagging, repository permissions and an image-retention policy. Publish a tested image from CI and verify that the EC2 host can pull it.
+
+Current progress: the private repository exists with immutable tags and deletion protection in Terraform. GitHub's publishing role is restricted to this repository's immutable OIDC identity on main, with ECR image permissions scoped to the project repository. The workflow now prepares an explicit linux/amd64 build, tests it and publishes it under the commit SHA. The changes still need a commit, push and remote verification. Registry retention and EC2 pull permissions remain future work.
 
 Use commit-based tags or image digests so deployment identifies a specific version. Plan for the Mac's ARM architecture and the server's x86 architecture: the deployment image must support the server.
 

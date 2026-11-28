@@ -1,6 +1,6 @@
 # Pulse project context
 
-Last updated: 2026-11-27
+Last updated: 2026-11-28
 
 Read this file when continuing work on Pulse. It records the current implementation, environment, learning preferences and exact continuation point. Use [PLANNING.md](PLANNING.md) for the roadmap and completion criteria, and inspect the actual code before changing behavior.
 
@@ -20,8 +20,9 @@ Work is AI-assisted and guided. Do not describe generated code or assisted steps
 | CI | GitHub Actions tests Python code, builds the image and reruns tests in a container. |
 | Tests | Ten test methods in `tests/test_app.py`. |
 | CD | Not implemented. A GitHub push does not update AWS. |
-| Terraform | CLI installed; initial provider configuration written locally. No init, plan, import or apply confirmed. |
-| ECR and ECS | Planned; not configured for this project. |
+| Terraform | CLI initialized with AWS provider 6.74.0; ECR, GitHub OIDC and publishing role/policy applied. EC2 has not been imported. |
+| ECR | Private repository exists; GitHub publishing workflow prepared locally, with its first remote run pending. |
+| ECS | Planned; not configured. |
 | Latest recorded validation | User confirmed green CI and working public page, manual checks and cooldown blocking on 2026-11-26. This file is not a live health check. |
 
 ## Repository and environments
@@ -88,6 +89,9 @@ Paths below are relative to the repository root.
 | `.env.example` | Configuration reference; Flask does not load it automatically. |
 | `wheelhouse/` | Optional ignored local offline-install cache; Git tracks only its placeholder. |
 | `infra/terraform/main.tf` | Initial Terraform/provider requirements, AWS region and permitted account. |
+| `infra/terraform/ecr.tf` | Private ECR repository, immutable tags, deletion protection and repository URL output. |
+| `infra/terraform/github-oidc.tf` | GitHub identity provider registration in the personal AWS account. |
+| `infra/terraform/github-ecr-role.tf` | Main-branch publishing role and repository-scoped image permissions. |
 | `docs/PLANNING.md` | Completed phases, next stages and completion criteria. |
 | `docs/CONTEXT.md` | Current system context and continuation point. |
 | Other files in `docs/` | Learning history and Docker, CI and public-demo guides. |
@@ -162,13 +166,19 @@ For public update commands and troubleshooting, use [public-demo.md](public-demo
 
 ## Current continuation point
 
-Terraform 1.17.2 was installed with Homebrew, and the user verified its version on the Mac. The `infra/terraform` directory exists and `main.tf` was written. Its format check passed. It permits AWS provider 6.x and only the personal account listed above.
+Terraform 1.17.2 is initialized with AWS provider 6.74.0. `main.tf`, `ecr.tf` and `.terraform.lock.hcl` were committed and pushed in `ce15559`. State stays local and is excluded from Git. Do not delete it or assume an empty state means cloud resources are absent.
 
-The last instruction was to run `cd infra/terraform` from the local repository root. The user has not yet confirmed that directory change. No provider download, Terraform state, AWS authentication, cloud plan, import or apply has been confirmed. The earlier IAM-role/CD walkthrough was interrupted before any role creation was confirmed.
+Personal AWS CLI authentication uses profile `pulse-personal`, created with `aws login`. The profile was verified against account 944464821297, and its region was set to eu-north-1. The user exported AWS_PROFILE in the working shell; a new shell may need it again. Credentials are temporary and may require another login.
 
-The immediate next learning step is to read `main.tf` together, confirm the local working directory and explain `terraform init` before asking the user to run it. Infrastructure ownership and authentication must be decided before cloud changes. Continue toward Terraform, ECR and controlled CD; study ECS and AI plugins as described in the plan.
+User-confirmed applies created the ECR repository, GitHub OIDC provider, IAM role `mini-uptime-monitor-github-ecr-publisher` and inline policy `publish-project-images`. The role permits image operations only on the project repository; the ECR authorization-token action requires Resource `*`. It does not permit EC2 deployment or image deletion.
 
-Before this documentation change, `infra/terraform/main.tf` was the local untracked addition and the latest repository commit was `3128557`. Recheck `git status` and history on continuation rather than treating this snapshot as live Git state. The documentation commit includes these two documents and their README links; the Terraform configuration is excluded from that commit pending its walkthrough.
+GitHub's OIDC API reported immutable subjects enabled, with prefix `repo:lihi-askapa@223032576/mini-uptime-monitor@1470667743`. The role trusts exactly that subject with `:ref:refs/heads/main` and audience `sts.amazonaws.com`.
+
+The current local workflow revision explicitly builds linux/amd64 on an x86 Ubuntu runner, runs the existing ten tests and then authenticates through OIDC to publish on main pushes or manual main runs. Pull requests do not publish. Tags use the full commit SHA; reruns retain an already published immutable tag. No AWS deployment is performed. The first remote authentication and image upload have not been verified.
+
+Next: review the workflow changes with Lihi, commit and push the two new IAM Terraform files plus workflow/documentation changes, and inspect the resulting GitHub run. Confirm an image is stored in ECR before planning EC2 pull access. The local Mac image was inspected as linux/arm64 and should not be used directly for the x86 EC2 server.
+
+Do not claim CD is complete. SSM setup, EC2 image-pull permissions, deployment orchestration and rollback remain pending. Recheck `git status`, Terraform state and current cloud identity on continuation.
 
 ## Teaching and collaboration preferences
 

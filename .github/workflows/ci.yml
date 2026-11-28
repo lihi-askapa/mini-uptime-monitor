@@ -1,4 +1,4 @@
-name: Python tests and Docker build
+name: Test, build and publish image
 
 on:
   push:
@@ -10,8 +10,15 @@ permissions:
 
 jobs:
   tests:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AWS_REGION: eu-north-1
+      ECR_REGISTRY: 944464821297.dkr.ecr.eu-north-1.amazonaws.com
+      ECR_REPOSITORY: mini-uptime-monitor
     steps:
       - name: Download repository code
         uses: actions/checkout@v6
@@ -28,7 +35,55 @@ jobs:
         run: python -m unittest discover -s tests -v
 
       - name: Build Docker image
-        run: docker build --tag mini-uptime-monitor:ci .
+        run: docker build --platform linux/amd64 --tag mini-uptime-monitor:ci .
 
       - name: Run tests inside the Docker image
         run: docker run --rm mini-uptime-monitor:ci python -m unittest discover -s tests -v
+
+      - name: Get temporary AWS credentials
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: aws-actions/configure-aws-credentials@v6.3.1
+        with:
+          role-to-assume: arn:aws:iam::944464821297:role/mini-uptime-monitor-github-ecr-publisher
+          aws-region: eu-north-1
+          allowed-account-ids: '944464821297'
+          role-session-name: pulse-image-publisher
+
+      - name: Log in to the private image registry
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          aws ecr get-login-password --region "$AWS_REGION" |
+            docker login --username AWS --password-stdin "$ECR_REGISTRY"
+
+      - name: Publish the tested image
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          IMAGE_URI="$ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA"
+          docker tag mini-uptime-monitor:ci "$IMAGE_URI"
+
+          # Immutable tags cannot be overwritten. A rerun can reuse the image
+          # already published for this commit without pushing a different build.
+          if aws ecr describe-images --repository-name "$ECR_REPOSITORY" \
+              --image-ids imageTag="$GITHUB_SHA" --region "$AWS_REGION" \
+              >/tmp/pulse-ecr-image.json 2>/tmp/pulse-ecr-error; then
+            echo "This commit's image already exists; retaining the published image."
+          elif grep -q 'ImageNotFoundException' /tmp/pulse-ecr-error; then
+            docker push "$IMAGE_URI"
+          else
+            cat /tmp/pulse-ecr-error >&2
+            exit 1
+          fi
+
+          {
+            echo "### Image available in ECR"
+            echo
+            echo "\`$IMAGE_URI\`"
+            echo
+            echo "Platform: linux/amd64. The EC2 application has not been updated."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Log out of the registry
+        if: always() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: docker logout "$ECR_REGISTRY"

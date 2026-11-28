@@ -64,6 +64,12 @@ After the Python tests pass, it builds `mini-uptime-monitor:ci` and runs the sam
 tests inside a temporary container from that image. No image is published and
 the application is not deployed. See [the CI lab in Hebrew](docs/ci-lab.md).
 
+The next workflow revision is prepared to publish the tested `linux/amd64` image
+to the private project ECR repository after successful main-branch checks. It uses
+GitHub OIDC and a narrowly scoped IAM role, with commit-SHA image tags. Pull requests
+and other branches run checks without publishing. This revision still needs a commit,
+push and a successful remote run; it does not update EC2.
+
 ## Optional scheduled monitoring
 
 The `monitor` CLI command reuses the web button's check-and-save function. The
