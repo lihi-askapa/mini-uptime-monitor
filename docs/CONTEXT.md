@@ -19,10 +19,10 @@ Work is AI-assisted and guided. Do not describe generated code or assisted steps
 | AWS deployment | Manually deployed on EC2, with Caddy providing public HTTPS. |
 | CI | GitHub Actions tests Python code, builds the image and reruns tests in a container. |
 | Tests | Fifteen test methods in `tests/test_app.py`; all passed locally, in green CI and in the pulled EC2 image. |
-| CD | Bounded SSM deployment manually verified with the current image. Manual GitHub workflow prepared locally; first remote run pending. Pushes do not deploy. |
+| CD | Manual GitHub workflow verified: cda4c66 deployed, then compatible-version rollback to b13144f succeeded. Pushes do not deploy. |
 | Terraform | AWS provider 6.74.0; ECR, OIDC, publishing role, EC2 role/profile and SSM policy attachment applied. EC2 itself has not been imported. |
 | ECR | Current manually deployed image: b13144f3ef327628849a377f409dfef02ce77a5d; fifteen tests passed on EC2. |
-| SSM | Server Online; personal CLI sent whoami and retrieved Success/root. GitHub deployment permissions are not configured. |
+| SSM | Online; separate GitHub deployment role and bounded document version 1 verified in successful Actions runs. |
 | ECS | Deferred by the user; continue CD on existing EC2 and Compose. |
 | Latest recorded validation | On 2026-11-28, user confirmed scheduler-health failure/recovery and successful SSM command execution. This file is not a live health check. |
 
@@ -129,7 +129,7 @@ scheduler depends on web becoming healthy before starting. This signal does not
 check UI behavior or send alerts. With a custom CLI interval, adjust the Flask
 configuration `MONITOR_MAX_AGE_SECONDS` to allow that interval and round duration.
 
-SQLite is the embedded database engine; `sqlite3` is its Python interface; `checks.db` is the data file. The database contains `checks` and `manual_check_limits`. A Docker volume survives container replacement but is not a backup and does not survive deleting its underlying storage.
+SQLite is the embedded database engine; `sqlite3` is its Python interface; `checks.db` is the data file. The database contains `checks`, `manual_check_limits` and `monitor_state`. A Docker volume survives container replacement but is not a backup and does not survive deleting its underlying storage.
 
 ## Public-demo behavior
 
@@ -202,9 +202,7 @@ SSM prerequisite verified on 2026-11-28: Terraform attached AmazonSSMManagedInst
 
 Troubleshooting note: the initial IAM simulation omitted aws:RequestedRegion and returned explicitDeny/AllowedByOrganizations=false. Repeating with eu-north-1 returned allowed/true. Do not interpret the initial result as proof of a blanket organization denial or a need to upgrade the account. The agent initially received AccessDenied and used a long retry backoff; exact cause/timing of recovery was not isolated. The new AWS sign-in experience uses AWS Settings at https://settings.aws.com/ and the Idea Launchpad project; do not assume an IAM username or root login exists for this identity.
 
-Next: commit this SSM milestone and updated deployment evidence. Continue controlled CD on the existing EC2/Compose stack; ECS is deferred. Prepare a separate GitHub deployment role and bounded SSM deployment document/workflow, with a manual trigger and application plus scheduler health verification.
-
-Do not claim CD is complete. GitHub deployment authorization, deployment orchestration and rollback remain pending. Recheck git status, Terraform state and current cloud identity on continuation.
+Current next step: finish the version-one project documentation using the verified CD, rollback and backup evidence below. ECS remains deferred. Alerting, remote Terraform state and stable addressing are future work; daily S3 backups are configured as recorded below. Recheck git status, Terraform state and cloud identity on continuation.
 
 ## Teaching and collaboration preferences
 
@@ -265,7 +263,66 @@ GitHub concurrency serializes deploy jobs; a host flock also covers manual calls
 YAML/Bash checks and six mocked SSM polling scenarios passed without AWS calls.
 Application tests remain fifteen. See deployment.md for operations and limitations.
 
-Next: commit and push the role, document, script, workflow and documentation;
-wait for publishing CI, then dispatch the first GitHub deployment manually with
-b13144f3ef327628849a377f409dfef02ce77a5d to verify OIDC and orchestration. Do not
-claim GitHub CD or rollback verified before those runs actually succeed.
+## Verified CD, rollback and backup on 2026-11-28
+
+GitHub run 46098753552 deployed cda4c6634b67d22827a4e10a7df68ba18c2a2aa2;
+run 46098856078 returned to b13144f3ef327628849a377f409dfef02ce77a5d.
+Both concluded success (also queried directly through gh). The latter is the
+current recorded live image. Application/schema code was identical between these
+tags; do not claim a schema rollback was exercised.
+
+With user authorization to execute the backup steps, personal account identity
+was checked as 944464821297. SSM command c8fd69cd-2a91-4120-8b6a-61acfd826549
+created an online snapshot using scripts/sqlite_snapshot.py, checked integrity,
+and copied it to /home/ec2-user/pulse-backups/checks-20261128T023904Z.db.
+The volume also contains /app/data/backups/checks-20261128T023904Z.db.
+SCP downloaded it to /Users/lihias/Documents/Codex/pulse-backups/ outside the repo.
+A separate checks-20261128T023904Z-restore-check.db was restored locally; SQLite
+integrity, counts and full SQL dump equality passed, and Flask /health and / both
+returned 200 from that restored database. The live database was not replaced.
+The backup contains 6,157 checks, two manual limits and one scheduler-state row;
+size 671,744 bytes; SHA256
+776adcc3318491f7c9e3b92ac2f4b991d4909fc9ab802f3a8dc534833d7f4d49.
+A private verification JSON is saved beside the Mac backup. Public monitoring
+health remained ok after the exercise. See backup-restore.md.
+
+Backups are standalone .db snapshots, not SQL/ZIP files or replicas. No backup
+scheduler, S3 storage or retention automation is configured. Application tests
+remain fifteen. Local checks of the new helper exercised an open WAL source,
+isolated restoration and refusal to overwrite existing destinations/the source.
+Do not commit backup databases or private verification artifacts.
+
+## Automatic S3 backups installed on 2026-11-28
+
+At the user’s explicit request, backups.tf was applied from a reviewed saved plan:
+seven creations, no changes/deletions. Bucket pulse-944464821297-backups-eu-north-1
+is private, AES256-encrypted, denies non-TLS access and expires sqlite/ objects at
+30 days through asynchronous S3 lifecycle. The EC2 inline policy permits PutObject
+and AbortMultipartUpload only under that prefix; no new read/list/delete rights.
+Versioning is not enabled. The role name still contains ecr-reader for historical
+reasons; it now also has SSM core and backup upload permissions.
+
+scripts/install_backup.py verified account 944464821297 and installed the helper,
+Bash runner, systemd service/timer and bucket environment file via SSM command
+8edc00c5-a8cb-427a-88e0-b7a507fb42b5. Result Success; service Result=success,
+ExecMainStatus=0; timer enabled and listed next run 03:00:31 UTC on 2026-11-28.
+The daily schedule is 03:00 UTC plus up to five minutes; Persistent catches missed
+runs after reboot, and on-failure retries after fifteen minutes. It relies on the
+EC2 host, Docker and web container being running; the Mac is not involved. The
+same host lock serializes backup with deployments. No alerts are configured.
+
+First service run uploaded sqlite/checks-20261128T024512Z.db and .db.json to S3.
+Downloaded from S3 and isolated restore verified native S3 checksum, metadata
+SHA256, SQLite integrity, all SQL contents, dashboard and /health (200). It contains
+6,175 check rows, 2 limits and 1 monitor-state row; 675,840 bytes. SHA256:
+79b4b59b45debdfc97b1a69e5d8cde1935699a58d4a9ef09716d18959c180339.
+Mac copy, restore-check DB and .s3-verification.json are outside the repository in
+/Users/lihias/Documents/Codex/pulse-backups/. Public monitoring health remained ok.
+This verifies the actual service path; the future calendar firing has not yet been
+observed. Application tests remain fifteen. Host installation is outside Terraform;
+rerun the reviewed installer after host script/unit changes. No application image
+rebuild is needed. The live database was never replaced. See backup-restore.md.
+
+Next: finish version-one demonstration documentation and commit the completed
+backup/rollback evidence and automation sources. Do not commit DB artifacts or
+Terraform state. Continue deferred improvements only when requested.

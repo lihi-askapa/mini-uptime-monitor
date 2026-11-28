@@ -146,7 +146,8 @@ SSM connectivity was verified on 2026-11-28. Terraform attaches the managed
 SSM core policy to the EC2 role; a diagnostic command sent from the personal
 AWS CLI returned Success and root. The separate GitHub deployment role and bounded SSM document were then created;
 a manual invocation verified the current image and a fresh scheduler round.
-The manual GitHub workflow is prepared locally; its first remote run is pending. A push publishes an image but does not deploy it.
+The manual GitHub workflow successfully deployed another image and returned to
+the previous compatible version. A push publishes an image but does not deploy it.
 
 See [deployment instructions](docs/deployment.md) for the manual Actions trigger
 and the difference between publishing, deploying and infrastructure updates.
@@ -161,7 +162,20 @@ and the difference between publishing, deploying and infrastructure updates.
 - [x] Scheduled checks (seven unit tests passed; repeated container rounds confirmed in logs)
 - [x] Manual AWS EC2 deployment and public HTTPS demo
 - [ ] Terraform module
-- [ ] Automated deployment (CD)
+- [x] Automated deployment with manual trigger, verified image update and compatible-version rollback
+- [x] Daily SQLite backups to S3, with first upload and isolated restore verified
 - [ ] AI-assisted review workflow with human approval
 
 See [learning notes](docs/learning-notes.md). Only completed stages should be described as hands-on experience in an interview.
+
+## Backup and restore
+
+A one-time online SQLite snapshot was created on 2026-11-28, downloaded from EC2
+to the Mac and restored to an isolated file. Integrity, transfer checksum, all
+restored SQL contents, dashboard rendering and application health were checked.
+The live database was not replaced. Daily backups are now enabled on EC2 and
+upload snapshots to private encrypted S3 storage with 30-day lifecycle expiration.
+The first service run uploaded successfully, and its S3 copy passed isolated restore
+checks. The timer runs around 03:00 UTC and retries failures after 15 minutes.
+These are separate `.db` snapshots, not a continuously updated replica.
+See [backup instructions and evidence](docs/backup-restore.md).

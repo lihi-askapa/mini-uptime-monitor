@@ -32,7 +32,7 @@ This is a learning demo. High availability, enterprise authentication, arbitrary
 | Public HTTPS demo | Complete | User verified page loading, manual checks and repeated-check blocking. |
 | Terraform setup | In progress | Initialized and validated; ECR repository, GitHub OIDC provider and publishing role/policy created. Existing EC2 resources are not adopted. |
 | ECR image registry | In progress | CI publication, EC2 pull and manual deployment verified; registry retention remains planned. |
-| Controlled CD | In progress | A manually started or explicitly approved workflow deploys a tested version and verifies recovery behavior. |
+| Controlled CD | Verified for compatible image versions | Manual GitHub workflow deployed cda4c66 and returned to b13144f; both runs passed health verification. Database migration rollback remains outside this exercise. |
 | ECS learning and evaluation | Deferred | Explain the concepts and record whether a separate migration exercise is worthwhile. |
 
 ## Completed stages and decisions
@@ -107,7 +107,7 @@ Completion: a tested image is present in ECR and the server can retrieve the exa
 
 ### 9. Build controlled CD
 
-SSM prerequisite completed on 2026-11-28: Terraform attached the managed SSM core policy to the EC2 role; the user confirmed Online status and a successful remote whoami returning root. The separate GitHub deployment role and bounded SSM document were applied. A manual SSM invocation verified the existing image and a fresh scheduled round. The manual GitHub deployment workflow is prepared locally; its first remote run, a version change and rollback remain unverified.
+SSM prerequisite completed on 2026-11-28: Terraform attached the managed SSM core policy to the EC2 role; the user confirmed Online status and a successful remote whoami returning root. The separate GitHub deployment role and bounded SSM document were applied. A manual SSM invocation verified the existing image and a fresh scheduled round. The manual GitHub workflow subsequently deployed cda4c66 successfully and returned to compatible version b13144f. Both runs passed web and scheduler verification; this did not test a database schema rollback.
 
 Proposed approach: GitHub authenticates to AWS through OIDC and receives temporary permissions. Systems Manager sends a bounded deployment operation to the intended EC2 host. Keep the initial trigger manual; do not assume GitHub environment approval features are available for the repository's plan and visibility.
 
@@ -132,7 +132,7 @@ Completion: Lihi can explain the tradeoffs. An actual migration is a separate de
 | Item | Why it matters | Completion evidence |
 |---|---|---|
 | History retention | SQLite grows with every scheduled and manual check. | A documented policy and a tested cleanup path. |
-| Backup and restore | A Docker volume is persistence, not a backup; EC2 termination currently deletes the root disk. | Restore data into an isolated instance or volume and inspect it. |
+| Backup and restore | Daily S3 backups enabled; first service execution and isolated restore verified. | Private encrypted bucket, 30-day lifecycle, daily 03:00 UTC timer and 15-minute failure retry. First S3 snapshot: 6,175 checks; checksum, integrity, contents and Flask checks passed. Future timer firing has not yet been observed. |
 | Scheduler monitoring | Deployed and verified on EC2. | Fifteen tests passed; user stopped the worker, observed 503 after the 180-second limit, restarted it and confirmed recovery to 200 on 2026-11-28. No automatic alerts yet. |
 | Stable address | The current demo hostname embeds a public IP that may change. | A chosen address/domain strategy with its cost understood. |
 | Integration checks | Unit tests do not boot the entire Compose stack together. | A repeatable check of web, scheduler and shared storage. |

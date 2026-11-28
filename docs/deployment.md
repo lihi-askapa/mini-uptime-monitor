@@ -6,7 +6,13 @@ On 2026-11-28, SSM document `mini-uptime-monitor-deploy` version 1 successfully
 processed the already running image `b13144f3ef327628849a377f409dfef02ce77a5d`.
 It verified web and scheduler image IDs, public health endpoints and a scheduled
 round completed after the deployment request. This did not exercise a version
-change or rollback. The GitHub workflow is prepared; its first run is pending.
+change or rollback in that initial run. Subsequent GitHub run
+[46098753552](https://github.com/lihi-askapa/mini-uptime-monitor/actions/runs/46098753552)
+successfully deployed cda4c6634b67d22827a4e10a7df68ba18c2a2aa2, and run
+[46098856078](https://github.com/lihi-askapa/mini-uptime-monitor/actions/runs/46098856078)
+successfully returned to b13144f3ef327628849a377f409dfef02ce77a5d. Both runs
+passed deployment verification. These tags share application/schema code;
+this is an image-version rollback exercise, not a database migration rollback.
 
 ## What each change needs
 
@@ -62,7 +68,7 @@ polling scenarios, not additional application test methods.
   Use the recorded command ID to inspect it before requesting another deployment.
 - Version 1 is pinned deliberately. Future script changes require Terraform apply
   to publish a new document version and an explicit workflow version update after review.
-- A rollback is not rehearsed yet. Future incompatible database changes require
+- Image-version rollback was rehearsed between compatible versions. Future incompatible database changes require
   a separate recovery plan; switching an image alone cannot undo data changes.
 
 ## References
