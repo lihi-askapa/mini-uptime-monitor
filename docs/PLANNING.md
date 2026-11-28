@@ -8,6 +8,19 @@ This plan distinguishes completed work from preparation and future work. The com
 
 For current configuration, file responsibilities and continuation instructions, read [CONTEXT.md](CONTEXT.md). Use [learning-notes.md](learning-notes.md) for the chronological learning record.
 
+## Version 1 completion boundary
+
+The application, public HTTPS deployment, CI publication, manually triggered CD,
+compatible-image rollback, scheduler-health exercise, daily S3 backup configuration,
+isolated S3 restore and versioned Terraform state with locking are implemented and
+verified within the limits recorded in the operational guides. The architecture
+is summarized in [architecture.md](architecture.md). A future calendar-triggered
+backup firing is distinct from the immediate service execution already verified.
+
+Alerting, stable addressing, history retention, Terraform modules/adoption of the
+existing server, ECS and schema-migration recovery are follow-up improvements,
+not unfinished acceptance criteria for this first version.
+
 ## Goals and boundaries
 
 - Understand the path from a browser request to application code, an external HTTP request and persistent storage.

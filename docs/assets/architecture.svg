@@ -1,0 +1,165 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1450" viewBox="0 0 1600 1450" role="img" aria-labelledby="title desc">
+<title id="title">Pulse — system architecture</title>
+<desc id="desc">GitHub CI publishes tested images to ECR. A manually triggered deployment authenticates using OIDC and invokes a bounded SSM document on one EC2 server. Caddy routes HTTPS requests to Flask; the web and scheduler containers share SQLite. Daily systemd backups upload SQLite snapshots to private S3. Terraform uses a separate versioned S3 backend with locking.</desc>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#7a8ca3"/></marker>
+<marker id="arrow-start" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 10 0 L 0 5 L 10 10 z" fill="#7a8ca3"/></marker>
+<linearGradient id="header" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#12253e"/><stop offset="1" stop-color="#234765"/></linearGradient>
+</defs>
+<rect width="1600" height="1450" fill="#f4f7fb"/>
+<rect width="1600" height="174" fill="url(#header)"/>
+
+<text x="48" y="38" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#a9c8de" text-anchor="start">LIHI ASKAPA  /  DEVOPS PORTFOLIO</text>
+<text x="48" y="94" font-family="Arial, Helvetica, sans-serif" font-size="49" font-weight="700" fill="#ffffff" text-anchor="start">Pulse</text>
+<text x="210" y="94" font-family="Arial, Helvetica, sans-serif" font-size="37" font-weight="400" fill="#ffffff" text-anchor="start">System architecture</text>
+<text x="50" y="135" font-family="Arial, Helvetica, sans-serif" font-size="21" font-weight="400" fill="#d1e1ec" text-anchor="start">Website monitoring · controlled delivery · persistent data</text>
+<text x="1548" y="39" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#b8d5e4" text-anchor="end">VERIFIED IMPLEMENTATION</text>
+<text x="1548" y="67" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#ffffff" text-anchor="end">28 NOV 2026</text>
+<rect x="40" y="202" width="1520" height="238" rx="20" fill="#edf3fb" stroke="#d9e4f2"/>
+<text x="64" y="235" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" fill="#2b5c8a" text-anchor="start">01  BUILD &amp; DELIVER</text>
+<text x="1534" y="235" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#52647a" text-anchor="end">Solid: execution / data    ·    Dashed: artifact selection / pull</text>
+<rect x="64" y="258" width="272" height="142" rx="16" fill="#fff" stroke="#dce4ed"/>
+<rect x="65" y="276" width="4" height="106" rx="2" fill="#2d638e"/>
+<text x="84" y="287" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#2d638e" text-anchor="start">SOURCE</text>
+<text x="84" y="318" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="700" fill="#12253e" text-anchor="start">GitHub · main</text>
+<text x="84" y="346" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">Commit application + config</text>
+<text x="84" y="369" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">Push starts publishing CI</text>
+<rect x="364" y="258" width="272" height="142" rx="16" fill="#fff" stroke="#dce4ed"/>
+<rect x="365" y="276" width="4" height="106" rx="2" fill="#2d638e"/>
+<text x="384" y="287" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#2d638e" text-anchor="start">CONTINUOUS INTEGRATION</text>
+<text x="384" y="318" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="700" fill="#12253e" text-anchor="start">Test &amp; build</text>
+<text x="384" y="346" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">15 tests, then container tests</text>
+<text x="384" y="369" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">Build for linux/amd64</text>
+<rect x="664" y="258" width="272" height="142" rx="16" fill="#fff" stroke="#dce4ed"/>
+<rect x="665" y="276" width="4" height="106" rx="2" fill="#2d638e"/>
+<text x="684" y="287" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#2d638e" text-anchor="start">IMAGE REGISTRY</text>
+<text x="684" y="318" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="700" fill="#12253e" text-anchor="start">Amazon ECR</text>
+<text x="684" y="346" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">Private application images</text>
+<text x="684" y="369" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">Immutable commit-SHA tags</text>
+<rect x="964" y="258" width="272" height="142" rx="16" fill="#fff" stroke="#dce4ed"/>
+<rect x="965" y="276" width="4" height="106" rx="2" fill="#2d638e"/>
+<text x="984" y="287" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#2d638e" text-anchor="start">MANUAL TRIGGER</text>
+<text x="984" y="318" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="700" fill="#12253e" text-anchor="start">Deploy workflow</text>
+<text x="984" y="346" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">Select a tested commit SHA</text>
+<text x="984" y="369" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">OIDC → temporary AWS role</text>
+<rect x="1264" y="258" width="272" height="142" rx="16" fill="#fff" stroke="#dce4ed"/>
+<rect x="1265" y="276" width="4" height="106" rx="2" fill="#2d638e"/>
+<text x="1284" y="287" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#2d638e" text-anchor="start">REMOTE EXECUTION</text>
+<text x="1284" y="318" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="700" fill="#12253e" text-anchor="start">Systems Manager</text>
+<text x="1284" y="346" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">Bounded deployment script</text>
+<text x="1284" y="369" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">Update services → verify</text>
+<path d="M336 332 H364" fill="none" stroke="#7a8ca3" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow)"/>
+<path d="M636 332 H664" fill="none" stroke="#7a8ca3" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow)"/>
+<path d="M936 332 H964" fill="none" stroke="#7a8ca3" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow)" stroke-dasharray="7 6"/>
+<path d="M1236 332 H1264" fill="none" stroke="#7a8ca3" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow)"/>
+<path d="M800 400 V468 H660 V500" fill="none" stroke="#7a8ca3" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow)" stroke-dasharray="7 6"/>
+<text x="816" y="468" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#52647a" text-anchor="start">EC2 pulls the selected image</text>
+<rect x="350" y="500" width="1210" height="504" rx="22" fill="#edf6f2" stroke="#c9ded5"/>
+<text x="378" y="540" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" fill="#27664f" text-anchor="start">02  RUN  /  AWS EC2</text>
+<text x="378" y="569" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="400" fill="#3e6757" text-anchor="start">One Linux host · Docker Compose network · eu-north-1</text>
+<rect x="1250" y="518" width="286" height="34" rx="10" fill="#ffffff" stroke="#c9ded5"/>
+<text x="1393" y="541" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" fill="#27664f" text-anchor="middle">SSM agent · host service</text>
+<path d="M1400 400 V518" fill="none" stroke="#7a8ca3" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow)"/>
+<rect x="60" y="610" width="240" height="140" rx="16" fill="#fff" stroke="#dce4ed"/>
+<rect x="61" y="628" width="4" height="104" rx="2" fill="#27664f"/>
+<text x="80" y="639" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#27664f" text-anchor="start">PUBLIC ACCESS</text>
+<text x="80" y="670" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="700" fill="#12253e" text-anchor="start">Visitor browser</text>
+<text x="80" y="698" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">Dashboard + manual checks</text>
+<text x="80" y="721" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">HTTPS on port 443</text>
+<rect x="390" y="610" width="260" height="140" rx="16" fill="#fff" stroke="#dce4ed"/>
+<rect x="391" y="628" width="4" height="104" rx="2" fill="#27664f"/>
+<text x="410" y="639" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#27664f" text-anchor="start">CONTAINER 1</text>
+<text x="410" y="670" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="700" fill="#12253e" text-anchor="start">Caddy</text>
+<text x="410" y="698" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">TLS certificates + HTTPS</text>
+<text x="410" y="721" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">Reverse proxy to web:8080</text>
+<rect x="720" y="610" width="300" height="140" rx="16" fill="#fff" stroke="#dce4ed"/>
+<rect x="721" y="628" width="4" height="104" rx="2" fill="#27664f"/>
+<text x="740" y="639" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#27664f" text-anchor="start">CONTAINER 2</text>
+<text x="740" y="670" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="700" fill="#12253e" text-anchor="start">Web application</text>
+<text x="740" y="698" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">Gunicorn + Flask</text>
+<text x="740" y="721" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">Read results / save checks</text>
+<rect x="1160" y="610" width="320" height="140" rx="16" fill="#fff" stroke="#dce4ed"/>
+<rect x="1161" y="628" width="4" height="104" rx="2" fill="#a06b24"/>
+<text x="1180" y="639" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#a06b24" text-anchor="start">PERSISTENT VOLUME</text>
+<text x="1180" y="670" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="700" fill="#12253e" text-anchor="start">SQLite · checks.db</text>
+<text x="1180" y="698" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">Shared monitor-data volume</text>
+<text x="1180" y="721" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">Results, limits, heartbeat</text>
+<path d="M300 680 H390" fill="none" stroke="#7a8ca3" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="345" y="664" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="400" fill="#52647a" text-anchor="middle">HTTPS</text>
+<path d="M650 680 H720" fill="none" stroke="#7a8ca3" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="685" y="664" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="400" fill="#52647a" text-anchor="middle">HTTP</text>
+<path d="M1020 680 H1160" fill="none" stroke="#7a8ca3" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow)" marker-start="url(#arrow-start)"/>
+<text x="1090" y="664" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#52647a" text-anchor="middle">read / write</text>
+<rect x="720" y="820" width="300" height="140" rx="16" fill="#fff" stroke="#dce4ed"/>
+<rect x="721" y="838" width="4" height="104" rx="2" fill="#27664f"/>
+<text x="740" y="849" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#27664f" text-anchor="start">CONTAINER 3</text>
+<text x="740" y="880" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="700" fill="#12253e" text-anchor="start">Scheduler</text>
+<text x="740" y="908" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">Check every configured site</text>
+<text x="740" y="931" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">Wait 60s after each round</text>
+<rect x="1160" y="820" width="320" height="140" rx="16" fill="#fff" stroke="#dce4ed"/>
+<rect x="1161" y="838" width="4" height="104" rx="2" fill="#27664f"/>
+<text x="1180" y="849" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#27664f" text-anchor="start">FIXED EXTERNAL TARGETS</text>
+<text x="1180" y="880" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="700" fill="#12253e" text-anchor="start">Monitored websites</text>
+<text x="1180" y="908" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">Example · Portfolio · Ogdan</text>
+<text x="1180" y="931" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">HTTP status + response time</text>
+<path d="M1020 910 H1160" fill="none" stroke="#7a8ca3" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="1090" y="894" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#52647a" text-anchor="middle">HTTP checks</text>
+<path d="M1020 845 H1090 V720 H1160" fill="none" stroke="#7a8ca3" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="1100" y="778" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#52647a" text-anchor="start">save</text>
+<path d="M960 750 V790 H1320 V820" fill="none" stroke="#7a8ca3" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="1305" y="782" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#52647a" text-anchor="end">manual check</text>
+<rect x="390" y="820" width="260" height="140" rx="16" fill="#ffffff" stroke="#c9ded5"/>
+<text x="410" y="849" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#27664f" text-anchor="start">DEPLOYMENT HEALTH CHECKS</text>
+<text x="410" y="879" font-family="monospace" font-size="16" font-weight="700" fill="#17384b" text-anchor="start">/health</text>
+<text x="410" y="900" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#52647a" text-anchor="start">Application + database read</text>
+<text x="410" y="928" font-family="monospace" font-size="16" font-weight="700" fill="#17384b" text-anchor="start">/health/monitoring</text>
+<text x="410" y="948" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#52647a" text-anchor="start">Completed round ≤ 180s old</text>
+<text x="60" y="804" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="700" fill="#213d55" text-anchor="start">2 images → 3 containers</text>
+<text x="60" y="834" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">The same app image runs</text>
+<text x="60" y="858" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">web and scheduler processes.</text>
+<text x="60" y="893" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">Caddy uses its own image.</text>
+<text x="60" y="942" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">SQLite is a file,</text>
+<text x="60" y="966" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">not another container.</text>
+<rect x="40" y="1040" width="740" height="330" rx="20" fill="#faf4e9" stroke="#e8dcc7"/>
+<text x="64" y="1075" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" fill="#92611d" text-anchor="start">03  PROTECT APPLICATION DATA</text>
+<rect x="64" y="1110" width="310" height="166" rx="16" fill="#fff" stroke="#dce4ed"/>
+<rect x="65" y="1128" width="4" height="130" rx="2" fill="#a06b24"/>
+<text x="84" y="1139" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#a06b24" text-anchor="start">EC2 HOST SERVICE</text>
+<text x="84" y="1170" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="700" fill="#12253e" text-anchor="start">Daily SQLite backup</text>
+<text x="84" y="1198" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">systemd timer · around 03:00 UTC</text>
+<text x="84" y="1221" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">Online snapshot via web container</text>
+<text x="84" y="1244" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">Retry failures after 15 minutes</text>
+<rect x="438" y="1110" width="318" height="166" rx="16" fill="#fff" stroke="#dce4ed"/>
+<rect x="439" y="1128" width="4" height="130" rx="2" fill="#a06b24"/>
+<text x="458" y="1139" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#a06b24" text-anchor="start">PRIVATE S3 BUCKET</text>
+<text x="458" y="1170" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="700" fill="#12253e" text-anchor="start">Database snapshots</text>
+<text x="458" y="1198" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">Timestamped .db + metadata</text>
+<text x="458" y="1221" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">AES256 encryption</text>
+<text x="458" y="1244" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">Expire after 30 days</text>
+<path d="M374 1195 H438" fill="none" stroke="#7a8ca3" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="406" y="1178" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="400" fill="#52647a" text-anchor="middle">upload</text>
+<text x="64" y="1310" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="400" fill="#71552c" text-anchor="start">Source: live checks.db    ·    Backup does not replace live data</text>
+<text x="64" y="1340" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="400" fill="#71552c" text-anchor="start">Verified: download from S3 + isolated restore + app read checks</text>
+<rect x="820" y="1040" width="740" height="330" rx="20" fill="#f1eff9" stroke="#dcd7ee"/>
+<text x="844" y="1075" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" fill="#66508e" text-anchor="start">04  MANAGE INFRASTRUCTURE</text>
+<rect x="844" y="1110" width="290" height="166" rx="16" fill="#fff" stroke="#dce4ed"/>
+<rect x="845" y="1128" width="4" height="130" rx="2" fill="#77619c"/>
+<text x="864" y="1139" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#77619c" text-anchor="start">OPERATOR · MAC</text>
+<text x="864" y="1170" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="700" fill="#12253e" text-anchor="start">Terraform</text>
+<text x="864" y="1198" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">Plan → review → apply</text>
+<text x="864" y="1221" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">Manages ECR, IAM, SSM</text>
+<text x="864" y="1244" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">and S3 resources</text>
+<rect x="1198" y="1110" width="338" height="166" rx="16" fill="#fff" stroke="#dce4ed"/>
+<rect x="1199" y="1128" width="4" height="130" rx="2" fill="#77619c"/>
+<text x="1218" y="1139" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#77619c" text-anchor="start">SEPARATE PRIVATE S3 BUCKET</text>
+<text x="1218" y="1170" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="700" fill="#12253e" text-anchor="start">Terraform state</text>
+<text x="1218" y="1198" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">Versioned + AES256 encrypted</text>
+<text x="1218" y="1221" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">Native S3 state locking</text>
+<text x="1218" y="1244" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#52647a" text-anchor="start">No automatic expiration</text>
+<path d="M1134 1195 H1198" fill="none" stroke="#7a8ca3" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow)" marker-start="url(#arrow-start)"/>
+<text x="1166" y="1178" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="400" fill="#52647a" text-anchor="middle">state</text>
+<text x="844" y="1310" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" fill="#625179" text-anchor="start">Application data ≠ infrastructure state</text>
+<text x="844" y="1340" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#625179" text-anchor="start">Existing EC2 and security group were created outside Terraform.</text>
+<text x="48" y="1411" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="400" fill="#53677d" text-anchor="start">DELIVERY: automatic execution, manual trigger · Backups and state remain private · No automatic rollback</text>
+<text x="1552" y="1411" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#53677d" text-anchor="end">PULSE / v1</text>
+</svg>

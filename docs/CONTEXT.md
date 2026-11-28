@@ -355,6 +355,17 @@ or GitHub role was granted access to the state bucket. The bucket manages its ow
 resource records; loss of the bucket requires deliberate bootstrap/recovery.
 The existing server and security group still have not been imported.
 
-Next: commit/push the backend configuration and state documentation, verify CI,
-and finish the version-one demonstration guide. No application deployment is
-needed for this state-location change. Application tests remain fifteen.
+Backend configuration was committed in 8a2d376 and CI passed. No application
+deployment was needed for that state-location change. Application tests remain fifteen.
+
+## Architecture handoff
+
+Prepared docs/architecture.md and docs/assets/architecture.svg plus a PNG export
+for the repository. The diagram covers publishing/deployment, all three runtime
+containers, shared SQLite, daily S3 snapshots and separate remote Terraform state.
+README now separates the checked v1 learning roadmap from deferred iterations.
+No application, workflow, infrastructure or test behavior changed for this handoff;
+application tests remain fifteen. The architecture document and both diagram
+formats are included in the documentation handoff commit, with README links.
+Next: use docs/architecture.md as the concise system walkthrough; deferred
+improvements remain separate from the completed v1 roadmap.

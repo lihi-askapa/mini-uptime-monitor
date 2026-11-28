@@ -8,6 +8,12 @@ manual checks share a 30-second per-target cooldown. Refresh to see scheduled re
 This learning demo is available while the EC2 server is running; its IP-based
 hostname may change after a server stop/start.
 
+## Architecture
+
+[![Pulse system architecture](docs/assets/architecture.svg)](docs/architecture.md)
+
+[Architecture and concise explanations](docs/architecture.md)
+
 ## Project planning and context
 
 - [Project plan](docs/PLANNING.md): completed stages, upcoming work and completion criteria.
@@ -155,17 +161,31 @@ and the difference between publishing, deploying and infrastructure updates.
 
 ## Learning roadmap
 
-- [x] Local application, SQLite history, health endpoint, logs and tests
-- [x] Docker image, environment variables and persistent volume
-- [x] Intentional CI failure, log investigation and repair
-- [x] GitHub Actions Python tests
-- [x] GitHub Actions image build and container tests (green run confirmed by the user)
-- [x] Scheduled checks (seven unit tests passed; repeated container rounds confirmed in logs)
-- [x] Manual AWS EC2 deployment and public HTTPS demo
-- [ ] Terraform module
-- [x] Automated deployment with manual trigger, verified image update and compatible-version rollback
-- [x] Daily SQLite backups to S3, with first upload and isolated restore verified
-- [ ] AI-assisted review workflow with human approval
+Version 1 covers the implemented and verified steps below. It remains a
+single-host learning demo; deferred improvements are tracked separately.
+
+- [x] Flask application, SQLite history, logs and 15 automated tests
+- [x] Docker image, Compose services and persistent storage
+- [x] CI failure investigation and repair
+- [x] Scheduled checks and stale-scheduler detection/recovery
+- [x] Public AWS EC2 deployment with Caddy HTTPS
+- [x] Terraform-managed ECR, IAM, SSM and S3 resources
+- [x] CI image publication to ECR using GitHub OIDC
+- [x] Automated deployment with a manual trigger and compatible-image rollback
+- [x] Daily SQLite backups to S3; first service execution and isolated restore verified
+- [x] Encrypted, versioned Terraform remote state with locking verified
+- [x] Architecture diagram and focused operational documentation
+
+Future iterations:
+
+- [ ] Automatic alert delivery and database history retention
+- [ ] Stable public addressing and continued cost review
+- [ ] Terraform adoption of existing EC2/network resources and reusable modules
+- [ ] ECS evaluation and a deliberate shared-data design
+- [ ] Database schema-migration recovery exercises
+
+The scheduled-backup service was verified with an immediate execution; that does
+not by itself establish that a future calendar-triggered run has fired.
 
 See [learning notes](docs/learning-notes.md). Only completed stages should be described as hands-on experience in an interview.
 
