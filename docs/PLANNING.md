@@ -32,7 +32,7 @@ This is a learning demo. High availability, enterprise authentication, arbitrary
 | Public HTTPS demo | Complete | User verified page loading, manual checks and repeated-check blocking. |
 | Terraform setup | In progress | Initialized and validated; ECR repository, GitHub OIDC provider and publishing role/policy created. Existing EC2 resources are not adopted. |
 | ECR image registry | In progress | CI publication, EC2 pull and manual deployment verified; registry retention remains planned. |
-| Controlled CD | Planned | A manually started or explicitly approved workflow deploys a tested version and verifies recovery behavior. |
+| Controlled CD | In progress | A manually started or explicitly approved workflow deploys a tested version and verifies recovery behavior. |
 | ECS learning and evaluation | Deferred | Explain the concepts and record whether a separate migration exercise is worthwhile. |
 
 ## Completed stages and decisions
@@ -107,7 +107,7 @@ Completion: a tested image is present in ECR and the server can retrieve the exa
 
 ### 9. Build controlled CD
 
-SSM prerequisite completed on 2026-11-28: Terraform attached the managed SSM core policy to the EC2 role; the user confirmed Online status and a successful remote whoami returning root. GitHub deployment permissions and the deployment workflow are not implemented.
+SSM prerequisite completed on 2026-11-28: Terraform attached the managed SSM core policy to the EC2 role; the user confirmed Online status and a successful remote whoami returning root. The separate GitHub deployment role and bounded SSM document were applied. A manual SSM invocation verified the existing image and a fresh scheduled round. The manual GitHub deployment workflow is prepared locally; its first remote run, a version change and rollback remain unverified.
 
 Proposed approach: GitHub authenticates to AWS through OIDC and receives temporary permissions. Systems Manager sends a bounded deployment operation to the intended EC2 host. Keep the initial trigger manual; do not assume GitHub environment approval features are available for the repository's plan and visibility.
 

@@ -144,8 +144,12 @@ without DDoS protection, automatic history retention or general-purpose URL inpu
 
 SSM connectivity was verified on 2026-11-28. Terraform attaches the managed
 SSM core policy to the EC2 role; a diagnostic command sent from the personal
-AWS CLI returned Success and root. GitHub deployment authorization and the
-CD workflow are still pending. A push publishes an image but does not deploy it.
+AWS CLI returned Success and root. The separate GitHub deployment role and bounded SSM document were then created;
+a manual invocation verified the current image and a fresh scheduler round.
+The manual GitHub workflow is prepared locally; its first remote run is pending. A push publishes an image but does not deploy it.
+
+See [deployment instructions](docs/deployment.md) for the manual Actions trigger
+and the difference between publishing, deploying and infrastructure updates.
 
 ## Learning roadmap
 

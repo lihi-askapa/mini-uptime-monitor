@@ -19,7 +19,7 @@ Work is AI-assisted and guided. Do not describe generated code or assisted steps
 | AWS deployment | Manually deployed on EC2, with Caddy providing public HTTPS. |
 | CI | GitHub Actions tests Python code, builds the image and reruns tests in a container. |
 | Tests | Fifteen test methods in `tests/test_app.py`; all passed locally, in green CI and in the pulled EC2 image. |
-| CD | Not implemented. A GitHub push does not update AWS. |
+| CD | Bounded SSM deployment manually verified with the current image. Manual GitHub workflow prepared locally; first remote run pending. Pushes do not deploy. |
 | Terraform | AWS provider 6.74.0; ECR, OIDC, publishing role, EC2 role/profile and SSM policy attachment applied. EC2 itself has not been imported. |
 | ECR | Current manually deployed image: b13144f3ef327628849a377f409dfef02ce77a5d; fifteen tests passed on EC2. |
 | SSM | Server Online; personal CLI sent whoami and retrieved Success/root. GitHub deployment permissions are not configured. |
@@ -227,3 +227,45 @@ Keep this setup separate from the project's runtime architecture. Do not assume 
 ## Keeping context current
 
 After a meaningful milestone, update the affected status, configuration, test count and continuation point. Record the date and distinguish local checks, CI results and user-confirmed server behavior. Keep historical investigations in the learning notes and planned changes in the planning document. Never turn these documents into a store for secrets or claim unverified work as complete.
+
+## CD preparation after the SSM milestone
+
+The user confirmed green CI after committing the SSM milestone. The separate
+GitHub deployment role and inline policy were applied; Terraform output returned
+arn:aws:iam::944464821297:role/mini-uptime-monitor-github-deployer.
+The trust uses the same verified immutable main-branch subject as publishing.
+SendCommand is scoped to the project EC2 instance and the custom document named
+mini-uptime-monitor-deploy; it does not authorize arbitrary shell documents.
+GetCommandInvocation requires Resource * and is read access to command results.
+
+Applied as Active document version 1 and manually exercised through SSM: deploy-document.tf embeds
+scripts/deploy.sh as a schema-2.2 Command document. ImageTag is a validated
+40-character lowercase SHA, passed as an environment variable. The script locks
+against concurrent deployments, uses the fixed host Compose files and registry,
+records a previous-image recovery reference, pulls the requested image, updates
+services without building, checks both actual image IDs, public health endpoints
+and a completed-round timestamp newer than deployment start. Registry credentials
+use a temporary Docker config. No automatic rollback is implemented. Host Compose
+configuration must already exist; image pulling does not update it. The document
+and script passed formatting/shell syntax checks, and four invalid parameter
+inputs were rejected locally; the current-image SSM execution subsequently succeeded on EC2.
+Application test count remains fifteen.
+
+SSM command 85beefeb-4e58-4e23-8d7a-68ee76901253 completed successfully for
+b13144f3ef327628849a377f409dfef02ce77a5d. The requested and existing images matched;
+the script verified both image IDs, public health and a newly completed scheduled
+round. This validates current-image execution, not an image change or rollback.
+Docker emitted a credential-storage warning for the temporary config directory;
+the EXIT trap removes that directory. Compose status lines also appeared in stderr.
+
+Prepared locally: .github/workflows/deploy.yml adds workflow_dispatch only,
+requires main and a full SHA with successful main publishing CI, uses the separate
+OIDC deployment role, invokes document version 1 and waits for terminal status.
+GitHub concurrency serializes deploy jobs; a host flock also covers manual calls.
+YAML/Bash checks and six mocked SSM polling scenarios passed without AWS calls.
+Application tests remain fifteen. See deployment.md for operations and limitations.
+
+Next: commit and push the role, document, script, workflow and documentation;
+wait for publishing CI, then dispatch the first GitHub deployment manually with
+b13144f3ef327628849a377f409dfef02ce77a5d to verify OIDC and orchestration. Do not
+claim GitHub CD or rollback verified before those runs actually succeed.
