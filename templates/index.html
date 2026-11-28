@@ -2,22 +2,61 @@
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pulse | Mini Uptime Monitor</title><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head>
-<body><main>
-<header><a class="brand" href="/">◉ PULSE <span>MINI UPTIME MONITOR</span></a><a class="health" href="/health">App health ↗</a></header>
-<section class="intro"><span class="eyebrow">OBSERVE. INVESTIGATE. LEARN.</span><h1>A little clarity<br>for your services.</h1><p>Check a website. Follow the response. Keep the evidence.</p></section>
+<body>
+<a class="skip-link" href="#targets">Skip to targets</a>
+<main>
+<header>
+  <a class="brand" href="/" aria-label="Pulse home"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M2 17h7l3-8 5 16 4-12 3 4h6"/></svg>PULSE</a>
+  <a class="health" href="/health">App health <span aria-hidden="true">↗</span></a>
+</header>
+<section class="intro" aria-labelledby="page-title">
+  <div class="intro-copy">
+    <span class="eyebrow">A CLEARER PICTURE OF AVAILABILITY</span>
+    <h1 id="page-title">Mini Uptime<br><span>Monitor.</span></h1>
+    <p>Your websites. Their vital signs.<br>Check availability, measure responses, and follow the history.</p>
+    <a class="intro-link" href="#targets">Explore your targets <span aria-hidden="true">↓</span></a>
+  </div>
+  <div class="pulse-panel">
+    <div class="pulse-panel-heading"><span class="eyebrow">THE PULSE OF YOUR WEBSITES</span><span class="wave-label">PULSE / 01</span></div>
+    <div class="waveform" aria-hidden="true">
+      <svg viewBox="0 0 600 200" preserveAspectRatio="xMidYMid meet">
+        <defs><path id="pulse-path" pathLength="100" d="M0 108H112L130 108 142 93 155 108H182L195 131 214 36 235 170 254 88 270 108H340L354 101 370 108H600"/></defs>
+        <path class="wave-baseline" d="M0 108H600"/>
+        <use class="wave-track" href="#pulse-path"/>
+        <use class="wave-sweep" href="#pulse-path"/>
+      </svg>
+    </div>
+    <div class="pulse-panel-footer"><span>One check. A little more clarity.<small>Illustrative pulse · results below</small></span><button class="motion-toggle" type="button" aria-pressed="false">Pause animation</button></div>
+  </div>
+</section>
 <div class="summary"><div><strong>{{ targets|length }}</strong><span>Configured targets</span></div><div><strong class="green">{{ counts.up }}</strong><span>Last check passed</span></div><div><strong class="red">{{ counts.down }}</strong><span>Last check failed</span></div></div>
-<section><div class="section-title"><h2>Your targets</h2><span>Manual checks · optional scheduled monitoring · refresh for updates</span></div>
+<section id="targets" aria-labelledby="targets-title"><div class="section-title"><div><span class="eyebrow">AVAILABILITY AT A GLANCE</span><h2 id="targets-title">Your targets</h2></div><span>Latest recorded results<br>Refresh the page for updates</span></div>
 <div class="targets">{% for key, target in targets.items() %}{% set last = latest.get(key) %}
-<article><div class="card-top"><span class="badge {{ last.status if last else 'pending' }}">{{ last.status|upper if last else 'NOT CHECKED' }}</span><span class="small">HTTP {{ last.status_code if last and last.status_code else '—' }}</span></div>
+<article class="target-card"><div class="card-top"><span class="badge {{ last.status if last else 'pending' }}">{{ last.status|upper if last else 'NOT CHECKED' }}</span><span class="small">HTTP {{ last.status_code if last and last.status_code else '—' }}</span></div>
 <h3>{{ target.name }}</h3><p class="url">{{ target.url }}</p>
 <div class="measurement"><strong>{{ last.response_ms|round|int if last else '—' }}</strong><span>ms · response headers</span></div>
 <p class="timestamp">{{ last.checked_at if last else 'Run your first check to get a result.' }}</p>
 {% if last and last.error %}<p class="error">{{ last.error }}</p>{% endif %}
-<form action="/checks" method="post"><input type="hidden" name="target_id" value="{{ key }}">{% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token }}"><small>Public demo: one manual check per target every 30 seconds, shared by all visitors.</small>{% endif %}<button type="submit">Check now <span>↗</span></button></form></article>
+<form action="/checks" method="post"><input type="hidden" name="target_id" value="{{ key }}">{% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token }}"><small>Public demo: one manual check per target every 30 seconds, shared by all visitors.</small>{% endif %}<button type="submit" aria-label="Check {{ target.name }} now">Check now <span aria-hidden="true">↗</span></button></form></article>
 {% endfor %}</div></section>
-<section class="history"><div class="section-title"><h2>Check history</h2><span>Latest 50 checks · UTC</span></div>
-{% if history %}<div class="table-wrap"><table><thead><tr><th>Target</th><th>Result</th><th>HTTP</th><th>Time</th><th>Checked at</th></tr></thead><tbody>
+<section class="history" aria-labelledby="history-title"><div class="section-title"><div><span class="eyebrow">EVERY RESPONSE LEAVES A TRACE</span><h2 id="history-title">Check history</h2></div><span>Latest 50 checks · UTC</span></div>
+{% if history %}<div class="table-wrap" role="region" aria-label="Check history" tabindex="0"><table><caption class="sr-only">Latest website availability checks, most recent first</caption><thead><tr><th scope="col">Target</th><th scope="col">Result</th><th scope="col">HTTP</th><th scope="col">Time</th><th scope="col">Checked at</th></tr></thead><tbody>
 {% for row in history %}<tr><td>{{ row.target_name }}{% if row.error %}<small>{{ row.error }}</small>{% endif %}</td><td><span class="badge {{ row.status }}">{{ row.status|upper }}</span></td><td>{{ row.status_code or '—' }}</td><td>{{ row.response_ms }} ms</td><td>{{ row.checked_at }}</td></tr>{% endfor %}
 </tbody></table></div>{% else %}<div class="empty">No checks yet.<span>Choose a target above to start your first investigation.</span></div>{% endif %}
 </section><footer>Built by Lihi Askapa · DevOps learning lab <span>Python / Flask / SQLite</span></footer>
-</main><script>document.querySelectorAll('form').forEach(form => form.addEventListener('submit', () => {const b=form.querySelector('button');b.disabled=true;b.textContent='Checking…';}));</script></body></html>
+</main>
+<script>
+  document.querySelectorAll('form').forEach(form => form.addEventListener('submit', () => {
+    const button = form.querySelector('button');
+    button.disabled = true;
+    button.textContent = 'Checking…';
+  }));
+  const motionToggle = document.querySelector('.motion-toggle');
+  const pulsePanel = document.querySelector('.pulse-panel');
+  motionToggle.addEventListener('click', () => {
+    const paused = pulsePanel.classList.toggle('is-paused');
+    motionToggle.setAttribute('aria-pressed', String(paused));
+    motionToggle.textContent = paused ? 'Play animation' : 'Pause animation';
+  });
+</script>
+</body></html>
